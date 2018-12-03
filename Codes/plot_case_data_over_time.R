@@ -3,6 +3,9 @@ rm(list=ls()) #remove previous variable assignments
 
 # load library
 library(plotly)
+library(ggplot2)
+library(plyr)
+library(webshot)
 
 # read in data
 # source("Codes/concat_cohort_case_data_from_redcap.R") # starts from downloading data
@@ -25,10 +28,26 @@ for (i in 1:length(sites)){
   }
 }
 
+# Ecuador cases
+library(EpiWeek)
+cases <- read.csv("Ecuador/Case_data.csv", head=T, stringsAsFactors = F)
+cases$year <- substr(cases$Epiweek, 1,4)
+cases$week <- substr(cases$Epiweek, 6,8)
+cases$Date <- epiweekToDate(as.numeric(cases$year), as.numeric(cases$week))[[1]]
+cases$Date <- as.Date(cases$Date, "%Y-%m-%d")
+cases$Year.Month <- substr(cases$Date, 1,7)
+cases2 <- ddply(cases, .(Site, Year.Month), summarize, Dengue = sum(Dengue, na.rm=T))
+sites <- unique(cases$Site)
 
-library(ggplot2)
-library(plyr)
-library(webshot)
+for (i in 1:length(sites)){
+  diseaseDF <- subset(cases, Site == sites[i])
+  caseplots <- plot_ly() %>%
+    add_trace(data=diseaseDF, x = ~Year.Month, y = ~Dengue, type = 'bar', color=I('black'))%>%
+    layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
+  filename <- paste0("Ecuador/Figures/Dengue_cases_", sites[i], ".png")
+  export(caseplots, file = filename)
+}
+
 
 kisumu_seiseir_temp <- read.csv("Kenya/Concatenated_Data/SEI-SEIR/SEI-SEIR_Simulations_TempOnly_Kisumu.csv", head=T)
 kisumu_seiseir_temp$Date <- as.Date(kisumu_seiseir_temp$Date, "%Y-%m-%d")
