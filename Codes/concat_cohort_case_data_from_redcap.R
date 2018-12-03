@@ -165,6 +165,11 @@ aic <- subset(casedata, id_cohort == "F")
 
 write.csv(hcc, "Kenya/Concatenated_Data/hcc_results.csv", row.names = F)
 
+# maxInf <- ddply(hcc, .(Site, person_id), summarize, denv = max(infected_denv_stfd, na.rm=T), chikv = max(infected_chikv_stfd, na.rm=T))
+# hcc.prev <- ddply(maxInf, .(Site), summarize, denvPrev = sum(denv==1)/length(denv), chikvPrev = sum(chikv==1)/length(chikv))
+# table(maxInf$denv)
+# table(maxInf$chikv)
+
 # exposure and infectious periods for aic ----------------------------------
 # all aic kids are febrile so if days with symptoms is na replace with zero as they had fever on day of visit 
 #check dates!
@@ -188,3 +193,8 @@ epimonths <- epimonths[complete.cases(epimonths),]
   
 # save epimonth data
 write.csv(epimonths, "Kenya/Concatenated_Data/aic_cases_by_month.csv", row.names = F)
+
+# epimonths$denv_prev <- epimonths$denv_positive/(epimonths$denv_positive+epimonths$denv_negative)
+# epimonths$chikv_prev <- epimonths$chikv_positive/(epimonths$chikv_positive+epimonths$chikv_negative)
+# hist(epimonths$denv_prev)
+# hist(epimonths$chikv_prev)
