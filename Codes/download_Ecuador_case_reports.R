@@ -24,5 +24,3 @@ for (i in 1:length(links)){
   MoH.report.name <- paste0("Ecuador/Ecuador_case_reports/Case_report_", i, ".pdf")
   download.file(MoH.URL, mode="wb", MoH.report.name)
 }
-
-
