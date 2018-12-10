@@ -1,4 +1,4 @@
-# Concatenate case data from Ecuador ----------------------------------------------- 
+# Concatenate laboratory-confirmed case data from Ecuador --------------------------- 
 library(EpiWeek)
 
 # load data
@@ -22,3 +22,16 @@ cases <- ddply(ec.cases, .(Site, Year.Month), summarize, denv_positive=sum(denv_
 
 # save data
 write.csv(cases, "Concatenated_Data/case_data/cases_by_month_Ecuador.csv", row.names = F)
+
+# Clinical case data from Ecuador 2003-2011 -----------------------------------------
+# load data
+cases0311 <- read.csv("Ecuador/Case_data/El_Oro_weekly_dengue_2003_2011.csv", head=T, stringsAsFactors = F)
+cases0311 <- subset(cases0311, !is.na(YEARS))
+
+# format date
+cases0311$Date <- epiweekToDate(cases0311$YEARS, cases0311$AREAS...SEMANAS)[[1]]
+cases0311$Date <- as.Date(cases0311$Date, "%Y-%m-$d")
+cases0311$Year.Month <- substr(cases0311$Date, 1,7)
+
+# save data
+write.csv(cases0311, "Concatenated_Data/case_data/cases_by_week_Ecuador_2003-2011.csv", row.names = F)
