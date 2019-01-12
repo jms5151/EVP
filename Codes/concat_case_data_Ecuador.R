@@ -1,3 +1,17 @@
+rm(list=ls()) #remove previous variable assignments
+
+filename <-"C:/Users/Jamie/Box Sync/DENV/Ecuador/Case_data/DENV_El_Oro_cohort_cities_2014-2018.xlsx"
+
+sheets <- openxlsx::getSheetNames(filename)
+SheetList <- lapply(sheets,openxlsx::read.xlsx,xlsxFile=filename)
+names(SheetList) <- sheets
+
+library(dplyr)
+library(purrr)
+test <- SheetList %>% map_int(nrow)
+test <- test[test > 0] %>% names()
+
+
 # Concatenate laboratory-confirmed case data from Ecuador --------------------------- 
 library(EpiWeek)
 
