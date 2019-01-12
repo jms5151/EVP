@@ -15,7 +15,7 @@ climateData$Date <- as.Date(climateData$Date, "%Y-%m-%d")
 initCond <- read.csv("Concatenated_Data/sensitivity_analyses/LHS_inputs.csv", head=T, stringsAsFactors = F)
 
 # run simulations using different initial conditions for state variables and save results -------------
-population <- c(5336, 419072, 14444, 75357, 57370, 279890, 13670, 25620)
+population <- c(7304, 547557, 240698, 154048, 57370, 279890, 13670, 25620)
 sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda", "Huaquillas", "Machala", "Portovelo", "Zaruma")
 BRs <- c(rep(31.31,4),rep(20.18,4)) # birth rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
 DRs <- c(rep(5.73,4),rep(5.12,4)) # death rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN

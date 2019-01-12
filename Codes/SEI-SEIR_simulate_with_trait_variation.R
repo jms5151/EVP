@@ -4,51 +4,32 @@ rm(list=ls()) #remove previous variable assignments
 # load packages
 library(deSolve)
 
-# load data
+# load model
 source("Codes/SEI-SEIR_model_with_trait_variation.R")
 
-a_posterior <- read.csv("trait_fits/biting_rate.csv", head=T)
-pEA_posterior <- read.csv("trait_fits/egg_to_adult_survival_probability.csv", head=T)
-EFD_posterior <- read.csv("trait_fits/eggs_per_female_per_day.csv", head=T)
-mu_posterior <- read.csv("trait_fits/lifespan.csv", head=T)
-MDR_posterior <- read.csv("trait_fits/mosquito_developement_rate.csv", head=T)
-PDR_posterior <- read.csv("trait_fits/parasite_development_rate.csv", head=T)
-b_posterior <- read.csv("trait_fits/vector_competence_b.csv", head=T)
-pMI_posterior <- read.csv("trait_fits/vector_competence_c.csv", head=T)
-
-climateData <- read.csv("Kenya/Concatenated_Data/climate/gapfilled_climate_data.csv", head=T)
+# load climate data
+climateData <- read.csv("Concatenated_Data/climate_data/merged_climate_data.csv", head=T, stringsAsFactors = F)
 climateData$Date <- as.Date(climateData$Date, "%Y-%m-%d")
 
-# randomly select rows of posterior distributions ---------------------------------
-posteriors <- list(a_posterior, pEA_posterior, EFD_posterior, mu_posterior, MDR_posterior, PDR_posterior, b_posterior, pMI_posterior)
-traitNames <- c("a", "pEA", "EFD", "mu_th", "MDR", "PDR", "b", "pMI")
-n = 50 # number of samples
-trait_posterior <- data.frame("ID"=seq(1:n))
+# load and set initial conditions
+init.cond <- read.csv("Concatenated_Data/sensitivity_analyses/LHS_inputs.csv", head=T)
+startIC <- subset(init.cond, IC == "18")
 
-for (i in 1:length(posteriors)){
-  trait.sub <- posteriors[[i]]
-  trait.sub <- trait.sub[sample(nrow(trait.sub), n), ]
-  if (traitNames[i] == "pEA"|traitNames[i] == "mu_th"){
-    colnames(trait.sub)[3] <- "c"
-  }
-  colnames(trait.sub) <- paste0(traitNames[i], "_", colnames(trait.sub))
-  trait_posterior <- cbind(trait_posterior, trait.sub[,1:3])
-}
+# load traits
+trait_posterior <- read.csv("Concatenated_Data/sensitivity_analyses/Random_sample_of_posterior_traits.csv", head=T)
 
-write.csv(trait_posterior, "Kenya/Concatenated_Data/SEI-SEIR/Random_sample_of_posterior_traits.csv", row.names = F)
+# set immigration and emmigration rate
+ie <- 0.01
 
-# select initial conditions for future simulations -------------------------------------------
-inits <- read.csv("Kenya/Concatenated_Data/SEI-SEIR/Initital_conditions/LHS_inputs.csv", head=T)
-startIC <- subset(inits, IC == "18")
-
-# run simulations -----------------------------------------------------------------
-population <- c(5336, 419072,14444,75357)
-sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda")
+# run simulations
+population <- c(7304, 547557, 240698, 154048, 57370, 279890, 13670, 25620)
+sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda", "Huaquillas", "Machala", "Portovelo", "Zaruma")
 timestep = 1/12
 traitDF <- data.frame(matrix(ncol = 11, nrow = 0))
-colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "simulation_number", "Site")  
-traitFileName <- "Kenya/Concatenated_Data/SEI-SEIR/SEI-SEIR_simulations_with_trait_variation.csv"
+colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "simulation_number", "Site")
+traitFileName <- "Concatenated_Data/model_simulations/SEI-SEIR_simulations_with_trait_variation.csv"
 write.csv(traitDF, traitFileName, row.names = F)
+
 
 for (j in 1:nrow(trait_posterior)){
   for (k in 2:ncol(trait_posterior)){
@@ -57,17 +38,16 @@ for (j in 1:nrow(trait_posterior)){
     assign(x,y)
   }
   for (l in 1:length(sites)){
-    # adjust by date if needed climateData <- subset(climateData, Date >= )
-    t_colName <- paste0("GF_", sites[l], "_mean_temp")
-    temp <- climateData[,t_colName]
-    h_colName <- paste0("GF_", sites[l], "_humidity")
-    hum <- climateData[,h_colName]
-    r_colName <- paste0("GF_", sites[l], "_cumRain")
-    rain <- climateData[,r_colName]
+    siteclimatevars <- names(climateData)[grep(sites[l], names(climateData))]
+    climateData2 <- climateData[,c("Date", siteclimatevars)]
+    climateData2 <- climateData2[complete.cases(climateData2),]
+    temp <- climateData2[, grep('temp', names(climateData2))]
+    hum <- climateData2[, grep('humidity', names(climateData2))]
+    rain <- climateData2[, grep('cumRain', names(climateData2))]
     M0 <- K_thr(temp[1], hum[1], rain[1])
-    Date <- climateData$Date
-    H0 <- population[j]
-    city <- sites[j]
+    Date <- climateData2$Date
+    H0 <- population[l]
+    city <- sites[l]
     times <- seq(1,length(Date), by=1)
     parameters <- c(EFD, pEA, MDR, K_thr, a, pMI, mu_th, PDR, b, timestep=timestep)
     state <- c(M1 = startIC$m1*M0, M2 = startIC$m2*M0, M3 = startIC$m3*M0, S = startIC$s*H0, E = startIC$e*H0, I = startIC$i*H0, R = startIC$r*H0)
@@ -75,9 +55,10 @@ for (j in 1:nrow(trait_posterior)){
     out2 <- as.data.frame(out)
     out2$Date <- Date
     out2$simulation_number <- j
-    out2$Site <- sites[j]
+    out2$Site <- sites[l]
     traitDF <- rbind(traitDF, out2)
     write.csv(traitDF, traitFileName, row.names = F)
     cat("finished running ode for", sites[l], "simulation #", j, "\n")
   }
 }
+

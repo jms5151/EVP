@@ -19,7 +19,7 @@ startIC <- subset(inits, IC == "18")
 ieRates<-c(0.06,0.07,0.08,0.09,0.10)
 
 # set site conditions 
-population <- c(5336, 419072, 14444, 75357, 57370, 279890, 13670, 25620)
+population <- c(7304, 547557, 240698, 154048, 57370, 279890, 13670, 25620)
 sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda", "Huaquillas", "Machala", "Portovelo", "Zaruma")
 BRs <- c(rep(31.31,4),rep(20.18,4)) # birth rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
 DRs <- c(rep(5.73,4),rep(5.12,4)) # death rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
