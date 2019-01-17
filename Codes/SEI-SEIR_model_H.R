@@ -4,10 +4,10 @@ seiseir_model_h <- function(t, state, parameters) {
     dM1 <- (EFD(temp)*pEA(temp)*MDR(temp)*mu_th(temp, hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_th(temp, hum[t]))),0)-(a(temp)*pMI(temp)*I/(S+E+I+R)+mu_th(temp, hum[t])*M1)
     dM2 <- (a(temp)*pMI(temp)*I/(S+E+I+R))*M1-(PDR(temp)+mu_th(temp, hum[t]))*M2
     dM3 <- PDR(temp)*M2-mu_th(temp, hum[t])*M3
-    dS <- -a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S + 23.9*(S/1000)/360 - 5.8*(S/1000)/360 + ie*(S+E+I+R) - ie*S
-    dE <- a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - 5.8*(E/1000)/360 - ie*E
-    dI <- (1.0/5.9)*E-(1.0/5.0)*I - 5.8*(I/1000)/360 - ie*I
-    dR <- (1.0/5.0)*I - 5.8*(R/1000)/360 - ie*R
+    dS <- -a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dE <- a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
+    dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360 - ie*I
+    dR <- (1.0/5.0)*I - DR*(R/1000)/360 - ie*R
     list(c(dM1, dM2, dM3, dS, dE, dI, dR))
   })
 }    

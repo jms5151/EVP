@@ -5,10 +5,10 @@ seiseir_model_r <- function(t, state, parameters) {
     dM1 <- (EFD(temp)*pEA(temp)*MDR(temp)*mu_t(temp)^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_tr(temp, rain[t]))),0)-(a(temp)*pMI(temp)*I/(S+E+I+R)+mu_t(temp)*M1)
     dM2 <- (a(temp)*pMI(temp)*I/(S+E+I+R))*M1-(PDR(temp)+mu_t(temp))*M2
     dM3 <- PDR(temp)*M2-mu_t(temp)*M3
-    dS <- -a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S + 23.9*(S/1000)/360 - 5.8*(S/1000)/360 + ie*(S+E+I+R) - ie*S
-    dE <- a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - 5.8*(E/1000)/360 - ie*E
-    dI <- (1.0/5.9)*E-(1.0/5.0)*I - 5.8*(I/1000)/360 - ie*I
-    dR <- (1.0/5.0)*I - 5.8*(R/1000)/360 - ie*R
+    dS <- -a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dE <- a(temp)*b(temp)*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
+    dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360 - ie*I
+    dR <- (1.0/5.0)*I - DR*(R/1000)/360 - ie*R
     list(c(dM1, dM2, dM3, dS, dE, dI, dR))
   })
 }    
@@ -90,10 +90,10 @@ K_t <- function(temp){
 }
 
 K_tr <- function(temp, rain){
-  if(rain >= 320){
+  if(rain >= 55){
     0.1*K_t(temp)
   }
   else {
-    K_t(temp)*(rain/320) # linear
+    K_t(temp)*(rain/55) # linear
   }
 }

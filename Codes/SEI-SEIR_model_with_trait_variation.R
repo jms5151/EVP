@@ -4,10 +4,10 @@ seiseir_model_thr <- function(t, state, parameters) {
     dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], hum[t], rain[t]))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
     dM2 <- (a(temp[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t]))*M2
     dM3 <- PDR(temp[t])*M2-mu_th(temp[t], hum[t])*M3
-    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + 23.9*(S/1000)/360 - 5.8*(S/1000)/360 + ((0.8*R)/900) # (0.016*R.lag)
-    dE <- a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - 5.8*(E/1000)/360 
-    dI <- (1.0/5.9)*E-(1.0/5.0)*I - 5.8*(I/1000)/360 #+ 1
-    dR <- (1.0/5.0)*I - 5.8*(R/1000)/360 - ((0.8*R)/900) # (0.016*R.lag)
+    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dE <- a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
+    dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360 - ie*I
+    dR <- (1.0/5.0)*I - DR*(R/1000)/360 - ie*R
     list(c(dM1, dM2, dM3, dS, dE, dI, dR))
   })
 }    
@@ -92,12 +92,12 @@ carrying_capacity_th <- function(temp, T0, EA, N, h0){
 }
 
 K_thr <- function(temp, hum, rain){
-  if(rain >= 150){
+  if(rain >= 55){
     0.1*carrying_capacity_th(temp,29.0,0.05,20000, hum)
   }
   else {
     # (1.267876e-05*rain*(rain-0)*sqrt(150-rain))*K_th(temp, hum) # briere
-    carrying_capacity_th(temp,29.0,0.05,20000, hum)*(rain/150) # linear
+    carrying_capacity_th(temp,29.0,0.05,20000, hum)*(rain/55) # linear
     # K_th(temp, hum)*exp(rain) # exponential
   }
 }
