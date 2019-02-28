@@ -3,32 +3,21 @@ rm(list=ls()) #remove previous variable assignments
 
 # load libraries -------------------------------------------------------------------------------------
 library(rpart)
-library(tree)
-library(partykit)
+library(rattle)
 
 # load data ------------------------------------------------------------------------------------------
 # source("C:/Users/Jamie/Box Sync/DENV/Codes/concat_zscore_climate_data_for_CART.R")
-zscoreDF <- read.csv("Kenya/Concatenated_Data/zscores_with_climate_data.csv", head=T)
-test <- subset(zscoreDF, aedes_total_class != "Comparable")
+zscoreDF <- read.csv("Concatenated_Data/zscores_with_climate_data.csv", head=T)
+zscoreDF$Country <- ifelse(zscoreDF$Site=="Chulaimbo"|zscoreDF$Site=="Kisumu"|zscoreDF$Site=="Msambweni"|zscoreDF$Site=="Ukunda", "Kenya", "Ecuador")
 
-tree.model <- tree(aedes_total_class ~ cum_R_mosq + var_T_mosq, data=zscoreDF)
-tree.model
-summary(tree.model)
-plot(tree.model)
-text(tree.model)
+# mosquitoes
+rpart.tree.adults <- rpart(Adult_correspondence_magnitude ~ T_min + T_mean + T_max + T_var + H_min + H_mean + H_max + H_var + R_min + R_mean + R_max + R_var + R_cum + R_sum_days + Site + Country, data=zscoreDF)
+fancyRpartPlot(rpart.tree.adults)
+prune.rpart.tree.adults <- prune(rpart.tree.adults, cp=0.04) # pruning the tree
+fancyRpartPlot(prune.rpart.tree.adults)
 
-rpart.tree <- rpart(aedes_total_class ~ mean_T_mosq + var_T_mosq + mean_H_mosq + var_H_mosq +
-                    cum_R_mosq + var_R_mosq + study_site, data=zscoreDF)
-plot(rpart.tree, uniform=TRUE, branch=0.6, margin=0.05)
-text(rpart.tree, all=TRUE, use.n=TRUE)
-# title("Training Set's Classification Tree")
-
-prune.rpart.tree <- prune(rpart.tree, cp=0.02) # pruning the tree
-plot(prune.rpart.tree, uniform=TRUE, branch=0.6)
-text(prune.rpart.tree, all=TRUE, use.n=TRUE)
-
-rparty.tree <- as.party(rpart.tree)
-# tiff("test.tiff")
-plot(rparty.tree)
-# dev.off()
-# par(mar=c(4,4,4,4))
+# dengue
+rpart.tree.dengue <- rpart(Dengue_correspondence_magnitude ~ T_min + T_mean + T_max + T_var + H_min + H_mean + H_max + H_var + R_min + R_mean + R_max + R_var + R_cum + R_sum_days + Site + Country, data=zscoreDF)
+fancyRpartPlot(rpart.tree.dengue)
+prune.rpart.tree.dengue <- prune(rpart.tree.dengue, cp=0.04) # pruning the tree
+fancyRpartPlot(prune.rpart.tree.dengue)
