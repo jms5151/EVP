@@ -29,8 +29,8 @@ redcap_vector$Year.Month <- paste0(substr(redcap_vector$Year.Month, 4, 7), "-", 
 redcap_vector$Site <- substr(redcap_vector$unique_house_id, 1, 1)
 redcap_vector$Site[redcap_vector$Site == "C"] <- "Chulaimbo"
 redcap_vector$Site[redcap_vector$Site == "K"] <- "Kisumu"
-# larvae$Site[larvae$Site == "M"] <- "Msambweni"
-# larvae$Site[larvae$Site == "U"] <- "Ukunda"
+redcap_vector$Site[redcap_vector$Site == "M"] <- "Msambweni"
+redcap_vector$Site[redcap_vector$Site == "U"] <- "Ukunda"
 
 # eggs  --------------------------------------------------
 # subset data for ovitrap surveys
@@ -43,11 +43,12 @@ ovitrap <- subset(ovitrap, aedes_species_ovitrap_in == 1 | aedes_species_ovitrap
 # summarize aedes abundances by survey
 ovitrap <- ddply(ovitrap, .(Site, Year.Month)
             , summarize
-            , aedes_total = sum(egg_count_ovitrap_in, na.rm=T) + sum(egg_count_ovitrap_out, na.rm=T)
+            , egg_total = (sum(egg_count_ovitrap_in, na.rm=T) + sum(egg_count_ovitrap_out, na.rm=T))/length(unique_house_id)
+            , numhouses = length(unique_house_id)
             , Date = max(date_ovitrap))
 
 # save data
-# write.csv(ovitrap, "Concatenated_Data/vector_data/Kenya_ovitrap.csv", row.names = F)
+write.csv(ovitrap, "Concatenated_Data/vector_data/Kenya_ovitrap.csv", row.names = F)
 
 # larvae, pupae, instars --------------------------------
 # subset data for larvae surveys
@@ -55,17 +56,17 @@ larvae <- subset(redcap_vector, redcap_repeat_instrument == "larva")
 larvae <- larvae[, grepl("Site|unique_house_id|larva|redcap|Year.Month", names(larvae) ) ]
 
 # subset to rows with aedes aegypti
-larvae <- subset(larva, aedes_species_larva_1_in == 1 | aedes_species_larva_1_out == 1)
+# larvae <- subset(larvae, aedes_species_larva_1_in == 1 | aedes_species_larva_1_out == 1)
 
 # summarize aedes abundances by survey
 larvae <- ddply(larvae, .(Site, Year.Month), summarize 
-                , pupae_total = sum(pupae_larva_1_in, na.rm=T) + sum(pupae_larva_1_out, na.rm=T)
-                , early_instar_total = sum(early_instars_larva_1_in, na.rm=T) + sum(early_instars_larva_1_out, na.rm=T)
-                , late_instar_total = sum(late_instars_larva_1_in, na.rm=T) + sum(late_instars_larva_1_out, na.rm=T)
+                , pupae_total = (sum(pupae_larva_1_in, na.rm=T) + sum(pupae_larva_1_out, na.rm=T))/length(unique_house_id)
+                , early_instar_total = (sum(early_instars_larva_1_in, na.rm=T) + sum(early_instars_larva_1_out, na.rm=T))/length(unique_house_id)
+                , late_instar_total = (sum(late_instars_larva_1_in, na.rm=T) + sum(late_instars_larva_1_out, na.rm=T))/length(unique_house_id)
                 , Date = max(date_larva))
 
 # save data
-# write.csv(larvae, "Concatenated_Data/vector_data/Kenya_larvae.csv", row.names = F)
+write.csv(larvae, "Concatenated_Data/vector_data/Kenya_larvae.csv", row.names = F)
 
 # adults - BG ------------------------------------------
 # subset data for BG surveys
@@ -75,20 +76,18 @@ bg <- bg[, grepl("Site|unique_house_id|bg|redcap|Year.Month", names(bg) ) ]
 # summarize aedes abundances by survey
 bg <- ddply(bg, .(Site, Year.Month)
                 , summarize
-                # Aedes aegypti does not seem to be counted yet
-                # , aedes_total = sum(aedes_agypti_male_bg, na.rm=T) + sum(aedes_agypti_unfed_bg, na.rm=T) + sum(aedes_agypti_bloodfed_bg, na.rm=T) + sum(aedes_agypti_half_gravid_bg, na.rm=T) + sum(aedes_agypti_gravid_bg, na.rm=T)
-                , aedes_total = sum(aedes_spp_male_bg, na.rm=T) + sum(aedes_spp_unfed_bg, na.rm=T) + sum(aedes_spp_bloodfed_bg, na.rm=T) + sum(aedes_spp_half_gravid_bg, na.rm=T) + sum(aedes_spp_gravid_bg, na.rm=T)
+                , aedes_total = (sum(aedes_agypti_male_bg, na.rm=T) + sum(aedes_agypti_unfed_bg, na.rm=T) + sum(aedes_agypti_bloodfed_bg, na.rm=T) + sum(aedes_agypti_half_gravid_bg, na.rm=T) + sum(aedes_agypti_gravid_bg, na.rm=T) + sum(aedes_spp_male_bg, na.rm=T) + sum(aedes_spp_unfed_bg, na.rm=T) + sum(aedes_spp_bloodfed_bg, na.rm=T) + sum(aedes_spp_half_gravid_bg, na.rm=T) + sum(aedes_spp_gravid_bg, na.rm=T))/length(unique_house_id)
                 , Date = max(date_bg))
 
 # save data
-# write.csv(bg, "Concatenated_Data/vector_data/Kenya_bg.csv", row.names = F)
+write.csv(bg, "Concatenated_Data/vector_data/Kenya_bg.csv", row.names = F)
 
 # adults - Prokopack ----------------------------------
 # subset data for Prokopack surveys
 prokopack <- subset(redcap_vector, redcap_repeat_instrument == "prokopack")
 prokopack <- prokopack[, grepl("Site|unique_house_id|prokopack|redcap|Year.Month", names(prokopack) ) ]
 
-# summarize aedes abundances by survey
+# summarize aedes abundances by survey; almost no variation in the number of houses through time
 prokopack <- ddply(prokopack, .(Site, Year.Month)
             , summarize
             , aedes_total = sum(aedes_agypti_male_prokopack_indoor, na.rm=T) + 
@@ -104,6 +103,7 @@ prokopack <- ddply(prokopack, .(Site, Year.Month)
             , Date = max(date_prokopack))
 
 # save data
-# write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack.csv", row.names = F)
+write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack.csv", row.names = F)
 
-# ggplot() + geom_point(data = larvae, aes(x = Year.Month, y = Site))
+library(ggplot2)
+ggplot() + geom_point(data = bg, aes(x = Year.Month, y = Site))
