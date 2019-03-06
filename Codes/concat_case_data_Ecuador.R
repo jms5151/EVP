@@ -23,6 +23,9 @@ weeklyDengue0311 <- melt(cases0311[,c(c("Date", "Year.Month", "Machala", "Huaqui
 # format headings
 colnames(weeklyDengue0311) <- c("Date", "Year.Month", "Site", "denv_positive")
 
+# Format site name (data came from Portovelo)
+weeklyDengue0311$Site <- gsub("Zaruma.Portovelo.Atahualpa", "Portovelo", weeklyDengue0311$Site)
+
 # list all possible site-dates
 # dates0311 <- seq.Date(min(weeklyDengue0311$Date), max(weeklyDengue0311$Date), by="week")
 # sites <- unique(weeklyDengue0311$Site)
@@ -98,14 +101,14 @@ colnames(weeklyDengue1418)[2] <- "Site"
 
 # adjust dengue values for 2015 based on Lowe et al. 2017 https://ars.els-cdn.com/content/image/1-s2.0-S2542519617300645-mmc1.pdf
 weeklyDengue1418$Year.Month <- substr(weeklyDengue1418$Date, 1, 7)
-weeklyDengue1418$denv_positive <- weeklyDengue1418$denv_positive_clinically_diagnosed
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-03", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.143)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-04", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.105)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-05", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.432)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-06", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.60)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-07", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.65)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-08", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.70)), weeklyDengue1418$denv_positive) 
-weeklyDengue1418$denv_positive <- ifelse(weeklyDengue1418$Year.Month == "2015-09", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.45)), weeklyDengue1418$denv_positive) 
+weeklyDengue1418$denv_positive_adjusted <- weeklyDengue1418$denv_positive_clinically_diagnosed
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-03", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.143)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-04", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.105)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-05", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.432)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-06", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.60)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-07", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.65)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-08", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.70)), weeklyDengue1418$denv_positive_adjusted) 
+weeklyDengue1418$denv_positive_adjusted <- ifelse(weeklyDengue1418$Year.Month == "2015-09", round(weeklyDengue1418$denv_positive_clinically_diagnosed * (1-0.45)), weeklyDengue1418$denv_positive_adjusted) 
 
 # add chikugunya data
 chikv1518 <- read.csv("Ecuador/Case_data/CHIKV_El_Oro_cohort_cities_2015-2018.csv", head=T, stringsAsFactors = F)
@@ -119,6 +122,17 @@ chikv1518$Date <- as.Date(date, "%Y-%m-%d")
 # summarize chikungunya cases 
 chikv1518 <- ddply(chikv1518, .(Date, Canton..Domic), summarize, chikv_positive = sum(Casos, na.rm=T))
 
+# adjust chikungunya values based on Lowe et al. 2017 
+chikv1518$Year.Month <- substr(chikv1518$Date, 1, 7)
+chikv1518$chikv_positive_adjusted <- chikv1518$chikv_positive
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-03", round(chikv1518$chikv_positive * 1.143), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-04", round(chikv1518$chikv_positive * 1.105), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-05", round(chikv1518$chikv_positive * 1.432), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-06", round(chikv1518$chikv_positive * 1.60), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-07", round(chikv1518$chikv_positive * 1.65), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-08", round(chikv1518$chikv_positive * 1.70), chikv1518$chikv_positive_adjusted) 
+chikv1518$chikv_positive_adjusted <- ifelse(chikv1518$Year.Month == "2015-09", round(chikv1518$chikv_positive * 1.45), chikv1518$chikv_positive_adjusted) 
+
 # add Zika data
 zikv1618 <- read.csv("Ecuador/Case_data/ZIKV_El_Oro_cohort_cities_2016-2018.csv", head=T, stringsAsFactors = F)
 
@@ -127,21 +141,22 @@ zikv1618$Fec.atencion <- as.Date(zikv1618$Fec.atencion, "%m/%d/%Y")
 date <- dateToEpiweek(zikv1618$Fec.atencion)
 date <- epiweekToDate(date$year, date$weekno)[[1]]
 zikv1618$Date <- as.Date(date, "%Y-%m-%d")
+zikv1618$Year.Month <- substr(zikv1618$Date, 1, 7)
 
 # remove non-Zika cases
 zikv1618 <- subset(zikv1618, Diagnostico.final == "ZIKA")
 
-# summarize chikungunya cases 
-zikv1618 <- ddply(zikv1618, .(Date, Canton..Domic), summarize, zikv_positive = sum(CASOS, na.rm=T))
+# summarize zika cases 
+zikv1618 <- ddply(zikv1618, .(Date, Year.Month, Canton..Domic), summarize, zikv_positive = sum(CASOS, na.rm=T))
 
 # merge chikungunya and Zika data
-chikv.zikv <- merge(chikv1518, zikv1618, by=c("Date", "Canton..Domic"), all=T)
+chikv.zikv <- merge(chikv1518, zikv1618, by=c("Date", "Canton..Domic", "Year.Month"), all=T)
 
 # rename canton as site
 colnames(chikv.zikv)[2] <- "Site"
 
 # merge chikungunya and Zika data with dengue data
-denv.chikv.zikv <- merge(weeklyDengue1418, chikv.zikv, by=c("Date", "Site"), all=T)
+denv.chikv.zikv <- merge(weeklyDengue1418, chikv.zikv, by=c("Date", "Site", "Year.Month"), all=T)
 
 # add Year.Month for all data
 denv.chikv.zikv$Year.Month <- substr(denv.chikv.zikv$Date, 1, 7)
@@ -156,7 +171,7 @@ weeksites <- as.data.frame(expand.grid("Date"=allweeks, "Site"=allsites))
 denv.chikv.zikv <- merge(denv.chikv.zikv, weeksites, by=c("Date", "Site"), all=T)
 
 # rearrange columns
-denv.chikv.zikv <- denv.chikv.zikv[,c("Date", "Year.Month", "Site", "denv_positive_lab_confirmed", "denv_positive_clinically_diagnosed", "denv_positive", "chikv_positive", "zikv_positive")]
+denv.chikv.zikv <- denv.chikv.zikv[,c("Date", "Year.Month", "Site", "denv_positive_lab_confirmed", "denv_positive_clinically_diagnosed", "denv_positive_adjusted", "chikv_positive", "chikv_positive_adjusted", "zikv_positive")]
 
 # save
 write.csv(denv.chikv.zikv, "Concatenated_Data/case_data/cases_by_week_Ecuador_2014_2018.csv", row.names = F)
@@ -176,6 +191,3 @@ write.csv(denv.chikv.zikv, "Concatenated_Data/case_data/cases_by_week_Ecuador_20
 # machala.comparison <- merge(machala0211[,c("year", "month", "cases")], eloro0211monthly, by=c("year", "month"))
 # machala.comparison$difference <- machala.comparison$machala_monthly_cases_summed - machala.comparison$cases
 # eloro0211 <- eloro0211[,c("Date", "Machala", "Huaquillas", "Zaruma.Portovelo.Atahualpa")]
-
-
-

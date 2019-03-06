@@ -5,6 +5,7 @@
 # 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
 # 2014-05-27 - 2015-05-26 Temperature, humidity, rainfall
 # 2016-01-01 - 2017-12-10 Temperature, humidity, rainfall
+# 2016-06-15 - 2018-07-04 Temperature, humidity, rainfall
 # 
 # Machala:
 # 1985-12-01 - 2016-12-31 Temperature, rainfall
@@ -17,12 +18,14 @@
 # 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
 # 2014-05-18 - 2015-05-17 Temperature, humidity, rainfall
 # 2016-03-10 - 2017-12-08 Temperature, humidity, rainfall
+# 2016-06-21 - 2018-07-10 Temperature, humidity, rainfall
 # 
 # Zaruma:
 # 2000-01-01 - 2012-12-31 Temperature, rainfall
 # 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
 # 2014-05-28 - 2015-05-27 Temperature, humidity, rainfall
 # 2016-01-04 - 2017-12-07 Temperature, humidity, rainfall
+# 2016-06-21 - 2018-05-01 Temperature, humidity, rainfall
 
 rm(list=ls()) #remove previous variable assignments
 
@@ -55,9 +58,9 @@ for (i in 1:length(clim.b4.2016)){
 }
 
 # subset Machala data by date
-m8516 <- subset(m8516, date >= "2000-01-01" & date < "2016-03-20")
+m8516 <- subset(m8516, date >= "2000-01-01" & date < "2013-03-20")
 
-# load 2013-2017 climate data (minimum date = 2013-03-20 for all sites) ----------------------------
+# load 2013-2018 climate data ----------------------------------------------------------------------
 ecuador.climate.files <- list.files("Ecuador/EVP_Ecuador_Data/")
 ecuador.climate.files <- ecuador.climate.files[grepl(".RData", ecuador.climate.files)]
 
@@ -66,11 +69,16 @@ for (j in 1:length(ecuador.climate.files)){
   load(fileName)
 }
 
+# remove duplicated dates 
+h00r <- h00r[!h00r$date %in% huaquillas$date,]
+p00r <- p00r[!p00r$date %in% portovelo$date,]
+z00r <- z00r[!z00r$date %in% zaruma$date,]
+
 # combine all data by site
-Huaquillas <- do.call(rbind, list(h0012, h13r, h14r, huaquillas))
+Huaquillas <- do.call(rbind, list(h00r, h0012, h13r, h14r, huaquillas))
 Machala <- do.call(rbind, list(m8516, m13r, m14r, machala))
-Portovelo <- do.call(rbind, list(p13r, p14r, portovelo))
-Zaruma <- do.call(rbind, list(z0012, z13r, z14r, zaruma))
+Portovelo <- do.call(rbind, list(p00r, p13r, p14r, portovelo))
+Zaruma <- do.call(rbind, list(z00r, z0012, z13r, z14r, zaruma))
 
 # change column names
 ecuador.climate <- list(Huaquillas, Machala, Portovelo, Zaruma)
@@ -88,6 +96,11 @@ gapfilled_data <- list(Huaquillas, Machala, Portovelo, Zaruma) %>% reduce(full_j
 # make all climate columns numeric
 colsToNum <- colnames(gapfilled_data)[grepl("GF_", names(gapfilled_data))]
 gapfilled_data[,colsToNum] <- lapply(gapfilled_data[,colsToNum], as.numeric)
+
+# make sure all dates are included included
+alldates <- as.data.frame(seq.Date(min(gapfilled_data$Date), max(gapfilled_data$Date), by="day"))
+colnames(alldates) <- "Date"
+gapfilled_data <- merge(alldates, gapfilled_data, by="Date", all = T)
 
 # Gapfill data -----------------------------------------------------------------------------------
 # calculate regression equations for temperature
@@ -202,8 +215,22 @@ for (n in 7:nrow(gapfilled_data)){
   gapfilled_data$GF_Zaruma_cumRain[n] <- sum(rainSub$GF_Zaruma_rain)
 }
 
+# create number of rainy days > 1mm/day in prior month for each day
+gapfilled_data$GF_Huaquillas_rainyDays <- NA
+gapfilled_data$GF_Machala_rainyDays <- NA
+gapfilled_data$GF_Portovelo_rainyDays <- NA
+gapfilled_data$GF_Zaruma_rainyDays <- NA
+
+for (o in 30:nrow(gapfilled_data)){
+  rainSub <- subset(gapfilled_data, Date >= Date[o] - 29 & Date <= Date[o])
+  gapfilled_data$GF_Huaquillas_rainyDays[o] <- sum(rainSub$GF_Huaquillas_rain > 1)
+  gapfilled_data$GF_Machala_rainyDays[o] <- sum(rainSub$GF_Machala_rain > 1)
+  gapfilled_data$GF_Portovelo_rainyDays[o] <- sum(rainSub$GF_Portovelo_rain > 1)
+  gapfilled_data$GF_Zaruma_rainyDays[o] <- sum(rainSub$GF_Zaruma_rain > 1)
+}
+
 colsToKeep <- colnames(gapfilled_data)[!grepl("_T|_RH|_R|Month", names(gapfilled_data))]
 GF_data <- gapfilled_data[,colsToKeep]
 
 # save data
-write.csv(GF_data, "Concatenated_Data/climate_data/gapfilled_climate_data_Ecuador_2000-2017.csv", row.names=F)
+write.csv(GF_data, "Concatenated_Data/climate_data/gapfilled_climate_data_Ecuador_2000-2018.csv", row.names=F)

@@ -149,12 +149,12 @@ R01_lab_results <- within(R01_lab_results, ufi2_result_chikv[R01_lab_results$chi
 #stfd denv igg seroconverters or PCR or UFI/UFI2 positives as infected. 
 R01_lab_results$infected_denv_stfd[R01_lab_results$tested_denv_stfd_igg ==1 |R01_lab_results$result_pcr_denv_kenya==0|R01_lab_results$result_pcr_denv_stfd==0|R01_lab_results$denv_result_ufi==0|R01_lab_results$prnt_result_denv==0|R01_lab_results$ufi2_result_denv==0]<-0
 R01_lab_results$infected_denv_stfd[R01_lab_results$seroc_denv_stfd_igg==1|R01_lab_results$result_pcr_denv_kenya==1|R01_lab_results$result_pcr_denv_stfd==1|R01_lab_results$denv_result_ufi==1|R01_lab_results$prnt_result_denv==1|R01_lab_results$ufi2_result_denv==1]<-1
-table(R01_lab_results$infected_denv_stfd)
+# table(R01_lab_results$infected_denv_stfd)
 
 #stfd chikv igg seroconverters or PCR or UFI/UFI2 positives as infected. or PNRT +
 R01_lab_results$infected_chikv_stfd[R01_lab_results$tested_chikv_stfd_igg ==1 |R01_lab_results$result_pcr_chikv_kenya==0|R01_lab_results$chikv_result_ufi==0|R01_lab_results$prnt_result_chikv==0|R01_lab_results$ufi2_result_chikv==0]<-0
 R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_lab_results$result_pcr_chikv_kenya==1|R01_lab_results$chikv_result_ufi==1|R01_lab_results$prnt_result_chikv==1|R01_lab_results$ufi2_result_chikv==1]<-1
-table(R01_lab_results$infected_chikv_stfd)
+# table(R01_lab_results$infected_chikv_stfd)
 
 casedata <- R01_lab_results[,c("id_cohort", "person_id", "Site", "redcap_event_name", "int_date"
                                , "date_symptom_onset", "age", "infected_denv_stfd", "infected_chikv_stfd")]
@@ -185,16 +185,21 @@ aic$date_start_exposed <- aic$date_start_infectious - 7
 aic$date_end_exposed <- aic$date_start_infectious - 1
 
 aic$Year.Month <- format(aic$date_start_infectious, "%Y-%m")
+
 # write.csv(aic, "Kenya/Concatenated_Data/aic_results.csv", row.names = F)
 
 # aggregate aic data -------------------------------------------------------
-epimonths <- ddply(aic, .(Site, Year.Month), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), denv_negative = sum(infected_denv_stfd==0, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), chikv_negative = sum(infected_chikv_stfd==0, na.rm=T), Date = max(date_start_infectious, na.rm=T))
-epimonths <- epimonths[complete.cases(epimonths),]
-  
+# library(lubridate)
+aic <- aic[!is.na(aic$Year.Month),]
+# aic$epiweek <- ifelse(!is.na(aic$date_start_infectious), paste(substr(aic$date_start_infectious, 1, 4), week(aic$date_start_infectious), sep="-"), NA)
+# epiweeks <- ddply(aic, .(Site, epiweek), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), denv_negative = sum(infected_denv_stfd==0, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), chikv_negative = sum(infected_chikv_stfd==0, na.rm=T), Date = min(date_start_infectious, na.rm=T))
+epimonths <- ddply(aic, .(Site, Year.Month), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), denv_negative = sum(infected_denv_stfd==0, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), chikv_negative = sum(infected_chikv_stfd==0, na.rm=T), Date = min(date_start_infectious, na.rm=T))
+
 # save epimonth data
 write.csv(epimonths, "Concatenated_Data/case_data/aic_cases_by_month_Kenya.csv", row.names = F)
 
+# explore prevalence within febrile children
 # epimonths$denv_prev <- epimonths$denv_positive/(epimonths$denv_positive+epimonths$denv_negative)
 # epimonths$chikv_prev <- epimonths$chikv_positive/(epimonths$chikv_positive+epimonths$chikv_negative)
-# hist(epimonths$denv_prev)
+# hist(epimonths$denv_prev) 
 # hist(epimonths$chikv_prev)

@@ -25,7 +25,7 @@ mosquitoes.ecuador <- Map(cbind, mosquitoes.ecuador, Site = ecuador.sites)
 mosquitoes.ecuador <- do.call("rbind", mosquitoes.ecuador)
 
 # get average number of mosquitoes per house
-mosquitoes.ecuador$aedes_total <- mosquitoes.ecuador$totA/mosquitoes.ecuador$houses
+mosquitoes.ecuador$aedes_total <- round(mosquitoes.ecuador$totA/mosquitoes.ecuador$houses)
 
 # summarize by month and year
 # mosquitoes.ecuador$Year.Month <- substr(mosquitoes.ecuador$Date, 1, 7)
@@ -36,6 +36,10 @@ mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==1] <- "Huaquillas"
 mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==2] <- "Machala"
 mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==3] <- "Portovelo"
 mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==4] <- "Zaruma"
+
+# format date
+mosquitoes.ecuador$Date <- as.Date(mosquitoes.ecuador$Date, "%Y-%m-%d")
+mosquitoes.ecuador$Date <- mosquitoes.ecuador$Date + 7
 
 # save data
 write.csv(mosquitoes.ecuador, "Concatenated_Data/vector_data/vector_data_Ecuador.csv", row.names = F)

@@ -43,8 +43,7 @@ ovitrap <- subset(ovitrap, aedes_species_ovitrap_in == 1 | aedes_species_ovitrap
 # summarize aedes abundances by survey
 ovitrap <- ddply(ovitrap, .(Site, Year.Month)
             , summarize
-            , egg_total = (sum(egg_count_ovitrap_in, na.rm=T) + sum(egg_count_ovitrap_out, na.rm=T))/length(unique_house_id)
-            , numhouses = length(unique_house_id)
+            , egg_total = (sum(egg_count_ovitrap_in, na.rm=T) + sum(egg_count_ovitrap_out, na.rm=T))/length(unique(unique_house_id))
             , Date = max(date_ovitrap))
 
 # save data
@@ -60,9 +59,9 @@ larvae <- larvae[, grepl("Site|unique_house_id|larva|redcap|Year.Month", names(l
 
 # summarize aedes abundances by survey
 larvae <- ddply(larvae, .(Site, Year.Month), summarize 
-                , pupae_total = (sum(pupae_larva_1_in, na.rm=T) + sum(pupae_larva_1_out, na.rm=T))/length(unique_house_id)
-                , early_instar_total = (sum(early_instars_larva_1_in, na.rm=T) + sum(early_instars_larva_1_out, na.rm=T))/length(unique_house_id)
-                , late_instar_total = (sum(late_instars_larva_1_in, na.rm=T) + sum(late_instars_larva_1_out, na.rm=T))/length(unique_house_id)
+                , pupae_total = (sum(pupae_larva_1_in, na.rm=T) + sum(pupae_larva_1_out, na.rm=T))/length(unique(unique_house_id))
+                , early_instar_total = (sum(early_instars_larva_1_in, na.rm=T) + sum(early_instars_larva_1_out, na.rm=T))/length(unique(unique_house_id))
+                , late_instar_total = (sum(late_instars_larva_1_in, na.rm=T) + sum(late_instars_larva_1_out, na.rm=T))/length(unique(unique_house_id))
                 , Date = max(date_larva))
 
 # save data
@@ -76,7 +75,7 @@ bg <- bg[, grepl("Site|unique_house_id|bg|redcap|Year.Month", names(bg) ) ]
 # summarize aedes abundances by survey
 bg <- ddply(bg, .(Site, Year.Month)
                 , summarize
-                , aedes_total = (sum(aedes_agypti_male_bg, na.rm=T) + sum(aedes_agypti_unfed_bg, na.rm=T) + sum(aedes_agypti_bloodfed_bg, na.rm=T) + sum(aedes_agypti_half_gravid_bg, na.rm=T) + sum(aedes_agypti_gravid_bg, na.rm=T) + sum(aedes_spp_male_bg, na.rm=T) + sum(aedes_spp_unfed_bg, na.rm=T) + sum(aedes_spp_bloodfed_bg, na.rm=T) + sum(aedes_spp_half_gravid_bg, na.rm=T) + sum(aedes_spp_gravid_bg, na.rm=T))/length(unique_house_id)
+                , aedes_total = (sum(aedes_agypti_male_bg, na.rm=T) + sum(aedes_agypti_unfed_bg, na.rm=T) + sum(aedes_agypti_bloodfed_bg, na.rm=T) + sum(aedes_agypti_half_gravid_bg, na.rm=T) + sum(aedes_agypti_gravid_bg, na.rm=T) + sum(aedes_spp_male_bg, na.rm=T) + sum(aedes_spp_unfed_bg, na.rm=T) + sum(aedes_spp_bloodfed_bg, na.rm=T) + sum(aedes_spp_half_gravid_bg, na.rm=T) + sum(aedes_spp_gravid_bg, na.rm=T))/length(unique(unique_house_id))
                 , Date = max(date_bg))
 
 # save data
@@ -99,7 +98,7 @@ prokopack <- ddply(prokopack, .(Site, Year.Month)
               sum(aedes_agypti_unfed_prokopack_outdoor, na.rm=T) + 
               sum(aedes_agypti_bloodfed_prokopack_outdoor, na.rm=T) + 
               sum(aedes_agypti_half_gravid_prokopack_outdoor, na.rm=T) + 
-              sum(aedes_agypti_gravid_prokopack_outdoor, na.rm=T)
+              sum(aedes_agypti_gravid_prokopack_outdoor, na.rm=T))
             , Date = max(date_prokopack))
 
 # save data

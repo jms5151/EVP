@@ -32,7 +32,7 @@ climateMerged <- ddply(climate, .(Date, site)
                        , RS_lst_mean = mean(mean_lst, na.rm=T)
                        , RS_rain = mean(daily_rainfall, na.rm=T))
 
-climateMerged$rain_wu[climateMerged$rain_wu > 250] <- NA # remove rainfall values of more than 1000 mm in a month
+climateMerged$rain_wu[climateMerged$rain_wu > 250] <- NA # remove rainfall values of more than 250 mm in a day
 
 # merge data for gapfilling ----------------------------------------------------
 sites <- unique(climateMerged$site)
@@ -137,7 +137,21 @@ for (j in 7:nrow(gapfilled_data)){
   gapfilled_data$GF_Ukunda_cumRain[j] <- sum(rainSub$GF_Ukunda_rain)
 }
 
-gapfilled_data <- gapfilled_data[7:nrow(gapfilled_data),]
+# create number of rainy days > 1mm/day in prior month for each day
+gapfilled_data$GF_Chulaimbo_rainyDays <- NA
+gapfilled_data$GF_Kisumu_rainyDays <- NA
+gapfilled_data$GF_Msambweni_rainyDays <- NA
+gapfilled_data$GF_Ukunda_rainyDays <- NA
+
+for (k in 30:nrow(gapfilled_data)){
+  rainSub <- subset(gapfilled_data, Date >= Date[k] - 29 & Date <= Date[k])
+  gapfilled_data$GF_Chulaimbo_rainyDays[k] <- sum(rainSub$GF_Chulaimbo_rain > 1)
+  gapfilled_data$GF_Kisumu_rainyDays[k] <- sum(rainSub$GF_Kisumu_rain > 1)
+  gapfilled_data$GF_Msambweni_rainyDays[k] <- sum(rainSub$GF_Msambweni_rain > 1)
+  gapfilled_data$GF_Ukunda_rainyDays[k] <- sum(rainSub$GF_Ukunda_rain > 1)
+}
+
+gapfilled_data <- gapfilled_data[30:nrow(gapfilled_data),]
 write.csv(gapfilled_data, "Concatenated_Data/climate_data/gapfilled_climate_data_Kenya.csv", row.names=F)
 
 # plot gap filled data v remotely sensed data ------------------------------------------
