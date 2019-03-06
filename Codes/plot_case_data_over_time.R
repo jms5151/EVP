@@ -30,19 +30,33 @@ for (i in 1:length(sites)){
 
 # Ecuador cases --------------------------------------------------------------
 cases0311 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2003_2011.csv", head=T, stringsAsFactors = F)
+cases1418 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2014_2018.csv", head=T, stringsAsFactors = F)
+cases1418$denv_positive <- cases1418$denv_positive_adjusted
 cases1718 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2017_2018.csv", head=T, stringsAsFactors = F)
-sites <- unique(cases0311$Site)
-casesList<-list(cases0311, cases1718)
-years<-c("2003-2011", "2017-2018")
+
+sites <- unique(cases1718$Site)
+casesList<-list(cases0311, cases1418, cases1718)
+years<-c("2003-2011", "2014-2018", "2017-2018")
 
 for (x in 1:length(casesList)){
   cases <- casesList[[x]]
   for (i in 1:length(sites)){
-    diseaseDF <- subset(cases, Site == sites[i])
-    caseplots <- plot_ly() %>%
-      add_trace(data=diseaseDF, x = ~Year.Month, y = ~denv_positive, type = 'bar', color=I('black'))%>%
-      layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
-    filename <- paste0("Ecuador/Figures/Dengue_cases_", sites[i], "_", years[x], ".png")
-    export(caseplots, file = filename)
+    if (years[x] == "2003-2011" & sites[i] == "Zaruma"){
+      cat("no Zaruma plot", "\n")
+    } else {
+      diseaseDF <- subset(cases, Site == sites[i])
+      caseplots <- plot_ly() %>%
+        add_trace(data=diseaseDF, x = ~Year.Month, y = ~denv_positive, type = 'bar', color=I('black'))%>%
+        layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
+      filename <- paste0("Ecuador/Figures/Dengue_cases_", sites[i], "_", years[x], ".png")
+      export(caseplots, file = filename)
+      if (years[x] == "2014-2018"){
+        caseplotsChikv <- plot_ly() %>%
+          add_trace(data=diseaseDF, x = ~Year.Month, y = ~chikv_positive, type = 'bar', color=I('black'))%>%
+          layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
+        filenameChikv <- paste0("Ecuador/Figures/Chikungunya_cases_", sites[i], "_", years[x], ".png")
+        export(caseplotsChikv, file = filenameChikv)
+      }
+    }
   }
 }
