@@ -2,56 +2,124 @@
 rm(list=ls()) #remove previous variable assignments
 
 # load libraries
+library(tidyverse)
 library(plyr)
 
-# load and format data ---------------------------------------------------------
+# load and format data redcap data ---------------------------------------------------------------------
 # import redcap data as 'redcap_clim_vec'
 source("Codes/REDCap_import_climate_data.R")
 
-# subset data columns associated with climate
-climate.all.sites <- redcap_climate[, grepl("date_collected$|hobo|wu|^redcap_event_name$|lst|daily", names(redcap_climate))]
+# create site and date variables
+redcap_climate$site <- gsub("_arm_1", "", redcap_climate$redcap_event_name)
+redcap_climate$Date <- redcap_climate$date_collected
 
-# create site variables and rename date variable
-climate.all.sites$site <- gsub("_arm_1", "", climate.all.sites$redcap_event_name)
-climate.all.sites$site <- gsub("chulaimbo_hospital|chulaimbo_village", "chulaimbo", climate.all.sites$site)
-climate.all.sites$site <- gsub("kisumu_estate|obama", "kisumu", climate.all.sites$site)
-colnames(climate.all.sites)[1] <- "Date"
+# subset data to weather variables of interest 
+climate_subset <- redcap_climate[,c("Date", "site", "temp_mean_hobo", "rainfall_hobo", "daily_rainfall")]
 
-# subset data
-climate <- subset(climate.all.sites, site=="chulaimbo"|site=="kisumu"|site=="msambweni"|site=="ukunda"|site=="hkki"|site=="hkmo")
+# load and format NOAA GSOD (Global Summary of the Day) from ------------------------------------------
+# https://www7.ncdc.noaa.gov/CDO/cdoselect.cmd?datasetabbv=GSOD&countryabbv&georegionabbv
+kisumu_gsod <- read.delim("Concatenated_Data/climate_data/GSOD_Kisumu.txt", header = TRUE, sep = ",")
+mombasa_gsod <- read.delim("Concatenated_Data/climate_data/GSOD_Mombasa.txt", header = TRUE, sep = ",")
 
-# average across chulaimbo and kisumu loggers
-climateMerged <- ddply(climate, .(Date, site)
-                       , summarize
-                       , temp_mean_hobo = mean(temp_mean_hobo, na.rm=T)
-                       , mean_temp_wu = mean(mean_temp_wu, na.rm=T)
-                       , rainfall_hobo = mean(rainfall_hobo, na.rm=T)
-                       , rain_wu = mean(rain_wu, na.rm=T)
-                       , rh_mean_hobo = mean(rh_mean_hobo, na.rm=T)
-                       , mean_humidity_wu = mean(mean_humidity_wu, na.rm=T)
-                       , RS_lst_mean = mean(mean_lst, na.rm=T)
-                       , RS_rain = mean(daily_rainfall, na.rm=T))
+# format temperature and site
+gsod.files <- list(kisumu_gsod, mombasa_gsod)
+gsod.files <-lapply(gsod.files, function(x) cbind(x, mean_temp_gsod = (x$TEMP-32)*(5/9)))
+gsod.files <-lapply(gsod.files, function(x) cbind(x, Date = as.Date(paste(substr(x$YEARMODA, 1, 4), substr(x$YEARMODA, 5, 6), substr(x$YEARMODA, 7, 8), sep="-"), "%Y-%m-%d")))
 
-climateMerged$rain_wu[climateMerged$rain_wu > 250] <- NA # remove rainfall values of more than 250 mm in a day
+# split, subset data, and merge data
+kisumu_gsod <- gsod.files[[1]][,c("Date", "mean_temp_gsod")]
+mombasa_gsod <- gsod.files[[2]][,c("Date", "mean_temp_gsod")]
+wide_data <- merge(kisumu_gsod, mombasa_gsod, by="Date", all=T)
+colnames(wide_data) <- c("Date", "kisumu_mean_temp_gsod", "mombasa_mean_temp_gsod")
 
-# merge data for gapfilling ----------------------------------------------------
-sites <- unique(climateMerged$site)
-siteNames <- as.character(sites)
+# reshape from long to wide
+sites <- unique(climate_subset$site)
 
-climateMerged2 <- subset(climateMerged, site == sites[1])
-colnames(climateMerged2)[2] <- siteNames[1]
-lastCol <- length(climateMerged2)
-colnames(climateMerged2)[3:lastCol] <- paste(siteNames[1], colnames(climateMerged2)[3:lastCol], sep = "_")
-
-for (i in 2:length(sites)){
-  tempDF <- subset(climateMerged, site == sites[i])
-  colnames(tempDF)[2:lastCol] <- paste(siteNames[i], colnames(tempDF)[2:lastCol], sep = "_")
-  climateMerged2 <- merge(climateMerged2, tempDF, by=c("Date"), all=T)
-  newName <- paste0("climate_", siteNames[i])
-  assign(newName, tempDF)
+for (i in 1:length(sites)){
+  x <- subset(climate_subset, site == sites[i])
+  x <- x[, !names(x) %in% c("site")]
+  colnames(x)[2:4] <- paste(sites[i], colnames(x)[2:4], sep='_')
+  wide_data <- merge(wide_data, x, by="Date", all=T)
 }
 
-# plot logger versus wu data -------------------------------------------------
+# make sure every date is included ------------------------------------------------------------------
+minDate <- as.Date('2013-06-01', '%Y-%m-%d')
+maxDate <- as.Date('2019-02-01', '%Y-%m-%d')
+dates <- as.data.frame(seq.Date(minDate, maxDate, by=1))
+colnames(dates)[1] <- "Date"
+wide_data <- merge(wide_data, dates, by="Date", all=T)
+wide_data <- subset(wide_data, Date >= minDate & Date <= maxDate)
+
+# fill in missing temperature data ------------------------------------------------------------------
+# Chulaimbo
+fill_ch_w_hosp <- lm(chulaimbo_village_temp_mean_hobo ~ chulaimbo_hospital_temp_mean_hobo, data = wide_data)
+fill_ch_w_gsod <- lm(chulaimbo_village_temp_mean_hobo ~ kisumu_mean_temp_gsod, data = wide_data)
+wide_data$chulaimbo_temperature <- ifelse(!is.na(wide_data$chulaimbo_village_temp_mean_hobo), wide_data$chulaimbo_village_temp_mean_hobo, round(coef(fill_ch_w_hosp)[[1]] + coef(fill_ch_w_hosp)[[2]] * wide_data$chulaimbo_hospital_temp_mean_hobo, 1))
+wide_data$chulaimbo_temperature <- ifelse(!is.na(wide_data$chulaimbo_temperature), wide_data$chulaimbo_temperature, round(coef(fill_ch_w_gsod)[[1]] + coef(fill_ch_w_gsod)[[2]] * wide_data$kisumu_mean_temp_gsod, 1))
+
+# Kisumu
+fill_ki_w_obama <- lm(kisumu_estate_temp_mean_hobo ~ obama_temp_mean_hobo, data = wide_data)
+fill_ki_w_gsod <- lm(kisumu_estate_temp_mean_hobo ~ kisumu_mean_temp_gsod, data = wide_data)
+wide_data$kisumu_temperature <- ifelse(!is.na(wide_data$kisumu_estate_temp_mean_hobo), wide_data$kisumu_estate_temp_mean_hobo, round(coef(fill_ki_w_obama)[[1]] + coef(fill_ki_w_obama)[[2]] * wide_data$obama_temp_mean_hobo, 1))
+wide_data$kisumu_temperature <- ifelse(!is.na(wide_data$kisumu_temperature), wide_data$kisumu_temperature, round(coef(fill_ki_w_gsod)[[1]] + coef(fill_ki_w_gsod)[[2]] * wide_data$kisumu_mean_temp_gsod, 1))
+
+# Msambweni
+fill_ms_w_uk <- lm(msambweni_temp_mean_hobo ~ ukunda_temp_mean_hobo, data = wide_data)
+fill_ms_w_gsod <- lm(msambweni_temp_mean_hobo ~ mombasa_mean_temp_gsod, data = wide_data)
+wide_data$msambweni_temperature <- ifelse(!is.na(wide_data$msambweni_temp_mean_hobo), wide_data$msambweni_temp_mean_hobo, round(coef(fill_ms_w_uk)[[1]] + coef(fill_ms_w_uk)[[2]] * wide_data$ukunda_temp_mean_hobo, 1))
+wide_data$msambweni_temperature <- ifelse(!is.na(wide_data$msambweni_temperature), wide_data$msambweni_temperature, round(coef(fill_ms_w_gsod)[[1]] + coef(fill_ms_w_gsod)[[2]] * wide_data$mombasa_mean_temp_gsod, 1))
+
+# Ukunda
+fill_uk_w_gsod <- lm(ukunda_temp_mean_hobo ~ mombasa_mean_temp_gsod, data = wide_data)
+wide_data$ukunda_temperature <- ifelse(!is.na(wide_data$ukunda_temp_mean_hobo), wide_data$ukunda_temp_mean_hobo, round(coef(fill_uk_w_gsod)[[1]] + coef(fill_uk_w_gsod)[[2]] * wide_data$mombasa_mean_temp_gsod, 1))
+
+# fill in missing rainfall data -------------------------------------------------------------------
+# Chulaimbo
+fill_ch_w_noaa <- lm(chulaimbo_village_rainfall_hobo ~ chulaimbo_hospital_daily_rainfall, data = wide_data)
+wide_data$chulaimbo_rainfall <- ifelse(!is.na(wide_data$chulaimbo_village_rainfall_hobo), wide_data$chulaimbo_village_rainfall_hobo, round(coef(fill_ch_w_noaa)[[1]] + coef(fill_ch_w_noaa)[[2]] * wide_data$chulaimbo_hospital_daily_rainfall, 1))
+
+# Kisumu
+fill_ki_w_noaa <- lm(obama_rainfall_hobo ~ obama_daily_rainfall, data = wide_data)
+wide_data$kisumu_rainfall <- ifelse(!is.na(wide_data$obama_rainfall_hobo), wide_data$obama_rainfall_hobo, round(coef(fill_ki_w_noaa)[[1]] + coef(fill_ki_w_noaa)[[2]] * wide_data$obama_daily_rainfall, 1))
+
+# Msmabweni
+fill_ms_w_noaa <- lm(msambweni_rainfall_hobo ~ msambweni_daily_rainfall, data = wide_data)
+wide_data$msambweni_rainfall <- ifelse(!is.na(wide_data$msambweni_rainfall_hobo), wide_data$msambweni_rainfall_hobo, round(coef(fill_ms_w_noaa)[[1]] + coef(fill_ms_w_noaa)[[2]] * wide_data$msambweni_daily_rainfall, 1))
+
+# Ukunda
+fill_uk_w_noaa <- lm(ukunda_rainfall_hobo ~ ukunda_daily_rainfall, data = wide_data)
+wide_data$ukunda_rainfall <- ifelse(!is.na(wide_data$ukunda_rainfall_hobo), wide_data$ukunda_rainfall_hobo, round(coef(fill_uk_w_noaa)[[1]] + coef(fill_uk_w_noaa)[[2]] * wide_data$ukunda_daily_rainfall, 1))
+
+# calculate 30 day aggregated rainfall values -----------------------------------------------------
+sites2 <- c("chulaimbo", "kisumu", "msambweni", "ukunda")
+
+for (j in 1:length(sites2)){
+  weatherdf <- wide_data[, c("Date", paste0(sites2[j], "_temperature"), paste0(sites2[j], "_rainfall"))]
+  weatherdf$monthly_rainfall <- NA
+  for (k in 30:nrow(weatherdf)){
+    rainSub <- subset(weatherdf, Date >= Date[k] - 29 & Date <= Date[k])
+    weatherdf$monthly_rainfall[k] <- sum(rainSub[paste0(sites2[j], "_rainfall")])
+    if (is.na(wide_data[k,paste0(sites2[j], "_temperature")])){
+      # fill in the few missing temperature days with the mean of the 2 days before and after date with missing data
+      wide_data[k,paste0(sites2[j], "_temperature")] <- mean(wide_data[(k-2):(k+2),paste0(sites2[j], "_temperature")], na.rm=T)
+    }  
+  }
+  colnames(weatherdf) <- gsub(paste0(sites2[j], "_"), "", colnames(weatherdf))
+  weatherdf$site <- sites2[j]
+  weatherdf <- weatherdf[30:nrow(weatherdf),]
+  assign(sites2[j], weatherdf)
+}  
+
+
+# merge data into long format and save -----------------------------------------------------------
+weatherdf <- do.call(rbind, list(chulaimbo, kisumu, msambweni, ukunda))
+write.csv(weatherdf, "Concatenated_Data/climate_data/gapfilled_climate_data_Kenya.csv", row.names = F)
+
+# plot data --------------------------------------------------------------------------------------
+# par(mfrow=c(2,3), cex=1.2)
+# plot(climateMerged2$kisumu_rainfall_hobo, climateMerged2$kisumu_rain_TRMM, pch=16, xlim=c(0,100), ylim=c(0,100), xlab=c("Kisumu rainfall (mm)"), ylab=c("TRMM (mm)"))
+# abline(0,1, lty=2)
+# abline(lm(climateMerged2$kisumu_rain_TRMM~climateMerged2$kisumu_rainfall_hobo), col='blue', lwd=2)
 # xs <- c(rep("kisumu_temp_mean_hobo", 2), "chulaimbo_temp_mean_hobo", rep("ukunda_temp_mean_hobo", 2), "msambweni_temp_mean_hobo", "chulaimbo_rainfall_hobo", "kisumu_rainfall_hobo", "msambweni_rainfall_hobo", "ukunda_rainfall_hobo", "chulaimbo_rh_mean_hobo", "kisumu_rh_mean_hobo", "msambweni_rh_mean_hobo", "ukunda_rh_mean_hobo")
 # ys <- c("chulaimbo_temp_mean_hobo", "hkki_mean_temp_wu", "hkki_mean_temp_wu", "msambweni_temp_mean_hobo", "hkki_mean_temp_wu", "hkki_mean_temp_wu", rep("hkki_rain_wu", 2), rep("hkmo_rain_wu", 2), rep("hkki_mean_humidity_wu", 2), rep("hkmo_mean_humidity_wu", 2))
 # 
@@ -66,107 +134,6 @@ for (i in 2:length(sites)){
 #   }
 #   tiff(fileName, width = 793, height = 471, units = "px")
 #   plot(climateMerged2[,xs[i]], climateMerged2[,ys[i]], xlim = c(15,32), ylim = c(15,32), col = alpha("blue", 0.5), pch=16, xlab = xs[i], ylab = ys[i])
-#   abline(a=0, b=1)
-#   dev.off()
-# }
-
-# gapfill climate data ---------------------------------------------------
-# calculate regression equations for temperature
-fill.ch.w.ki = lm(chulaimbo_temp_mean_hobo ~ kisumu_temp_mean_hobo, data=climateMerged2)
-fill.ch.w.wu = lm(chulaimbo_temp_mean_hobo ~ hkki_mean_temp_wu, data=climateMerged2)
-fill.ki.w.ch = lm(kisumu_temp_mean_hobo ~ chulaimbo_temp_mean_hobo, data=climateMerged2)
-fill.ki.w.wu = lm(kisumu_temp_mean_hobo ~ hkki_mean_temp_wu, data=climateMerged2)
-fill.uk.w.ms = lm(ukunda_temp_mean_hobo ~ msambweni_temp_mean_hobo, data=climateMerged2)
-fill.uk.w.wu = lm(ukunda_temp_mean_hobo ~ hkmo_mean_temp_wu, data=climateMerged2)
-fill.ms.w.uk = lm(msambweni_temp_mean_hobo ~ ukunda_temp_mean_hobo, data=climateMerged2)
-fill.ms.w.wu = lm(msambweni_temp_mean_hobo ~ hkmo_mean_temp_wu, data=climateMerged2)
-
-# gap fill temperature data with paired site if available, else with weather underground temperature
-climateMerged2$GF_Chulaimbo_mean_temp <- ifelse(!is.na(climateMerged2$chulaimbo_temp_mean_hobo), climateMerged2$chulaimbo_temp_mean_hobo, round(coef(fill.ch.w.ki)[[1]] + coef(fill.ch.w.ki)[[2]] * climateMerged2$kisumu_temp_mean_hobo, 1))
-climateMerged2$GF_Chulaimbo_mean_temp <- ifelse(!is.na(climateMerged2$GF_Chulaimbo_mean_temp), climateMerged2$GF_Chulaimbo_mean_temp, round(coef(fill.ch.w.wu)[[1]] + coef(fill.ch.w.wu)[[2]] * climateMerged2$hkki_mean_temp_wu, 1))
-
-climateMerged2$GF_Kisumu_mean_temp <- ifelse(!is.na(climateMerged2$kisumu_temp_mean_hobo), climateMerged2$kisumu_temp_mean_hobo, round(coef(fill.ki.w.ch)[[1]] + coef(fill.ki.w.ch)[[2]] * climateMerged2$chulaimbo_temp_mean_hobo, 1))
-climateMerged2$GF_Kisumu_mean_temp <- ifelse(!is.na(climateMerged2$GF_Kisumu_mean_temp), climateMerged2$GF_Kisumu_mean_temp, round(coef(fill.ki.w.wu)[[1]] + coef(fill.ki.w.wu)[[2]] * climateMerged2$hkki_mean_temp_wu, 1))
-
-climateMerged2$GF_Msambweni_mean_temp <- ifelse(!is.na(climateMerged2$msambweni_temp_mean_hobo), climateMerged2$msambweni_temp_mean_hobo, round(coef(fill.ms.w.uk)[[1]] + coef(fill.ms.w.uk)[[2]] * climateMerged2$ukunda_temp_mean_hobo, 1))
-climateMerged2$GF_Msambweni_mean_temp <- ifelse(!is.na(climateMerged2$GF_Msambweni_mean_temp), climateMerged2$GF_Msambweni_mean_temp, round(coef(fill.ms.w.wu)[[1]] + coef(fill.ms.w.wu)[[2]] * climateMerged2$hkmo_mean_temp_wu, 1))
-
-climateMerged2$GF_Ukunda_mean_temp <- ifelse(!is.na(climateMerged2$ukunda_temp_mean_hobo), climateMerged2$ukunda_temp_mean_hobo, round(coef(fill.uk.w.ms)[[1]] + coef(fill.uk.w.ms)[[2]] * climateMerged2$msambweni_temp_mean_hobo, 1))
-climateMerged2$GF_Ukunda_mean_temp <- ifelse(!is.na(climateMerged2$GF_Ukunda_mean_temp), climateMerged2$GF_Ukunda_mean_temp, round(coef(fill.uk.w.wu)[[1]] + coef(fill.uk.w.wu)[[2]] * climateMerged2$hkmo_mean_temp_wu, 1))
-
-# gap fill rain data with weather underground
-climateMerged2$GF_Chulaimbo_rain <- ifelse(!is.na(climateMerged2$chulaimbo_rainfall_hobo), climateMerged2$chulaimbo_rainfall_hobo, climateMerged2$hkki_rain_wu)
-climateMerged2$GF_Kisumu_rain <- ifelse(!is.na(climateMerged2$kisumu_rainfall_hobo), climateMerged2$kisumu_rainfall_hobo, climateMerged2$hkki_rain_wu)
-climateMerged2$GF_Msambweni_rain <- ifelse(!is.na(climateMerged2$msambweni_rainfall_hobo), climateMerged2$msambweni_rainfall_hobo, climateMerged2$hkmo_rain_wu)
-climateMerged2$GF_Ukunda_rain <- ifelse(!is.na(climateMerged2$ukunda_rainfall_hobo), climateMerged2$ukunda_rainfall_hobo, climateMerged2$hkmo_rain_wu)
-
-# gap fill humidity data with weather underground
-climateMerged2$GF_Chulaimbo_humidity <- ifelse(!is.na(climateMerged2$chulaimbo_rh_mean_hobo), climateMerged2$chulaimbo_rh_mean_hobo, climateMerged2$hkki_mean_humidity_wu)
-climateMerged2$GF_Kisumu_humidity <- ifelse(!is.na(climateMerged2$kisumu_rh_mean_hobo), climateMerged2$kisumu_rh_mean_hobo, climateMerged2$hkki_mean_humidity_wu)
-climateMerged2$GF_Msambweni_humidity <- ifelse(!is.na(climateMerged2$msambweni_rh_mean_hobo), climateMerged2$msambweni_rh_mean_hobo, climateMerged2$hkmo_mean_humidity_wu)
-climateMerged2$GF_Ukunda_humidity <- ifelse(!is.na(climateMerged2$ukunda_rh_mean_hobo), climateMerged2$ukunda_rh_mean_hobo, climateMerged2$hkmo_mean_humidity_wu)
-
-# average from 2 days before and after for dates without data from logger and weather underground records
-sites2 <- colnames(climateMerged2[, grepl("GF", names(climateMerged2))])
-
-for (i in 1:length(sites2)){
-  if (any(is.na(climateMerged2[,sites2[i]]))==TRUE){
-    for (j in 1:nrow(climateMerged2)){
-      if (is.na(climateMerged2[,sites2[i]][j])==TRUE){
-        climSub <- climateMerged2[c(c(j-2):c(j+2)),]
-        climateMerged2[,sites2[i]][j] <- mean(climSub[,sites2[i]], na.rm=T)
-      }
-    }
-  }
-}
-
-# subset gap filled data
-gapfilled_data <- climateMerged2[, grepl("Date|GF", names(climateMerged2))]
-
-# create cumulative rainfall in prior week for each day
-gapfilled_data$GF_Chulaimbo_cumRain <- NA
-gapfilled_data$GF_Kisumu_cumRain <- NA
-gapfilled_data$GF_Msambweni_cumRain <- NA
-gapfilled_data$GF_Ukunda_cumRain <- NA
-
-for (j in 7:nrow(gapfilled_data)){
-  rainSub <- subset(gapfilled_data, Date >= Date[j] - 6 & Date <= Date[j])
-  gapfilled_data$GF_Chulaimbo_cumRain[j] <- sum(rainSub$GF_Chulaimbo_rain)
-  gapfilled_data$GF_Kisumu_cumRain[j] <- sum(rainSub$GF_Kisumu_rain)
-  gapfilled_data$GF_Msambweni_cumRain[j] <- sum(rainSub$GF_Msambweni_rain)
-  gapfilled_data$GF_Ukunda_cumRain[j] <- sum(rainSub$GF_Ukunda_rain)
-}
-
-# create number of rainy days > 1mm/day in prior month for each day
-gapfilled_data$GF_Chulaimbo_rainyDays <- NA
-gapfilled_data$GF_Kisumu_rainyDays <- NA
-gapfilled_data$GF_Msambweni_rainyDays <- NA
-gapfilled_data$GF_Ukunda_rainyDays <- NA
-
-for (k in 30:nrow(gapfilled_data)){
-  rainSub <- subset(gapfilled_data, Date >= Date[k] - 29 & Date <= Date[k])
-  gapfilled_data$GF_Chulaimbo_rainyDays[k] <- sum(rainSub$GF_Chulaimbo_rain > 1)
-  gapfilled_data$GF_Kisumu_rainyDays[k] <- sum(rainSub$GF_Kisumu_rain > 1)
-  gapfilled_data$GF_Msambweni_rainyDays[k] <- sum(rainSub$GF_Msambweni_rain > 1)
-  gapfilled_data$GF_Ukunda_rainyDays[k] <- sum(rainSub$GF_Ukunda_rain > 1)
-}
-
-gapfilled_data <- gapfilled_data[30:nrow(gapfilled_data),]
-write.csv(gapfilled_data, "Concatenated_Data/climate_data/gapfilled_climate_data_Kenya.csv", row.names=F)
-
-# plot gap filled data v remotely sensed data ------------------------------------------
-# library(ggplot2)
-# gf <- colnames(climateMerged2[, grepl("GF", names(climateMerged2))])
-# gf <- gf[!grepl("humidity", gf)]
-# rs <- c(colnames(climateMerged2[, grepl("RS_lst", names(climateMerged2))]), colnames(climateMerged2[, grepl("RS_rain", names(climateMerged2))]))
-# rs <- rs[!grepl("hkki|hkmo", rs)]
-# 
-# for (i in 1:length(gf)){
-#   fileName <- paste0("Kenya/Figures/climate/", gf[i], "_v_", rs[i], ".tiff")
-#   fileName <- gsub("GF_|_mean", "", fileName)
-#   fileName <- gsub("chulaimbo_RS|kisumu_RS|msambweni_RS|ukunda_RS", "RS", fileName)
-#   tiff(fileName, width = 793, height = 471, units = "px")
-#   plot(climateMerged2[,gf[i]], climateMerged2[,rs[i]], xlim = c(15,32), ylim = c(15,32), col = alpha("blue", 0.5), pch=16, xlab = gf[i], ylab = rs[i])
 #   abline(a=0, b=1)
 #   dev.off()
 # }
