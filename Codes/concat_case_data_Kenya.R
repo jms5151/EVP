@@ -157,14 +157,13 @@ R01_lab_results$infected_chikv_stfd[R01_lab_results$seroc_chikv_stfd_igg==1|R01_
 # table(R01_lab_results$infected_chikv_stfd)
 
 casedata <- R01_lab_results[,c("id_cohort", "person_id", "Site", "redcap_event_name", "int_date"
-                               , "date_symptom_onset", "age", "infected_denv_stfd", "infected_chikv_stfd")]
+                               , "date_symptom_onset", "infected_denv_stfd", "infected_chikv_stfd")]
 
 # subset by cohort ---------------------------------------------------------
 hcc <- subset(casedata, id_cohort == "C")
 aic <- subset(casedata, id_cohort == "F")
 
 # write.csv(hcc, "Kenya/Concatenated_Data/hcc_results.csv", row.names = F)
-
 # maxInf <- ddply(hcc, .(Site, person_id), summarize, denv = max(infected_denv_stfd, na.rm=T), chikv = max(infected_chikv_stfd, na.rm=T))
 # hcc.prev <- ddply(maxInf, .(Site), summarize, denvPrev = sum(denv==1)/length(denv), chikvPrev = sum(chikv==1)/length(chikv))
 # table(maxInf$denv)
@@ -173,33 +172,25 @@ aic <- subset(casedata, id_cohort == "F")
 # exposure and infectious periods for aic ----------------------------------
 # all aic kids are febrile so if days with symptoms is na replace with zero as they had fever on day of visit 
 #check dates!
-aic$date_symptom_onset[is.na(aic$date_symptom_onset)] <- 0
+# aic$date_symptom_onset[is.na(aic$date_symptom_onset)] <- 0
 
 # if kids had fever for more than 7 days treat as day 0
-aic$date_symptom_onset[aic$date_symptom_onset > 7] <- 0
+# aic$date_symptom_onset[aic$date_symptom_onset > 7] <- 0
 
 # exposure and infection start and end dates
-aic$date_start_infectious <- (aic$int_date - aic$date_symptom_onset)
-aic$date_end_infectious <- aic$date_start_infectious + 4
-aic$date_start_exposed <- aic$date_start_infectious - 7
-aic$date_end_exposed <- aic$date_start_infectious - 1
-
-aic$Year.Month <- format(aic$date_start_infectious, "%Y-%m")
-
+# aic$date_start_infectious <- (aic$int_date - aic$date_symptom_onset)
+# aic$date_end_infectious <- aic$date_start_infectious + 4
+# aic$date_start_exposed <- aic$date_start_infectious - 7
+# aic$date_end_exposed <- aic$date_start_infectious - 1
 # write.csv(aic, "Kenya/Concatenated_Data/aic_results.csv", row.names = F)
 
 # aggregate aic data -------------------------------------------------------
-# library(lubridate)
+aic$Year.Month <- format(aic$int_date, "%Y-%m")
 aic <- aic[!is.na(aic$Year.Month),]
-# aic$epiweek <- ifelse(!is.na(aic$date_start_infectious), paste(substr(aic$date_start_infectious, 1, 4), week(aic$date_start_infectious), sep="-"), NA)
-# epiweeks <- ddply(aic, .(Site, epiweek), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), denv_negative = sum(infected_denv_stfd==0, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), chikv_negative = sum(infected_chikv_stfd==0, na.rm=T), Date = min(date_start_infectious, na.rm=T))
-epimonths <- ddply(aic, .(Site, Year.Month), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), denv_negative = sum(infected_denv_stfd==0, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), chikv_negative = sum(infected_chikv_stfd==0, na.rm=T), Date = min(date_start_infectious, na.rm=T))
+epimonths <- ddply(aic, .(Site, Year.Month), summarise, denv_positive = sum(infected_denv_stfd==1, na.rm=T), chikv_positive = sum(infected_chikv_stfd==1, na.rm=T), Date = max(int_date, na.rm=T))
 
 # save epimonth data
 write.csv(epimonths, "Concatenated_Data/case_data/aic_cases_by_month_Kenya.csv", row.names = F)
 
-# explore prevalence within febrile children
-# epimonths$denv_prev <- epimonths$denv_positive/(epimonths$denv_positive+epimonths$denv_negative)
-# epimonths$chikv_prev <- epimonths$chikv_positive/(epimonths$chikv_positive+epimonths$chikv_negative)
-# hist(epimonths$denv_prev) 
-# hist(epimonths$chikv_prev)
+# library(ggplot2)
+# ggplot() + geom_point(data = epimonths, aes(x = Year.Month, y = Site))
