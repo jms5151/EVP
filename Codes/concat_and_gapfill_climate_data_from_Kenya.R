@@ -106,7 +106,6 @@ wide_data$msambweni_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_msambwe
 fill_uk_w_noaa <- lm(Monthly_rainfall_ukunda ~ Monthly_rainfall_ukunda_noaa, data = wide_data)
 wide_data$ukunda_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_ukunda), wide_data$Monthly_rainfall_ukunda, round(coef(fill_uk_w_noaa)[[1]] + coef(fill_uk_w_noaa)[[2]] * wide_data$Monthly_rainfall_ukunda_noaa, 1))
 
-
 # fill in missing humidity data -------------------------------------------------------------------
 wide_data$Month_Day <- format(wide_data$Date, "%m-%d")
 humidityMeans <- ddply(wide_data, .(Month_Day), summarize
@@ -133,7 +132,7 @@ for (j in 1:length(sites2)){
   weatherdf$Monthly_rainy_days_25 <- NA
   for (k in 30:nrow(weatherdf)){
     rainSub <- subset(weatherdf, Date >= Date[k] - 29 & Date <= Date[k])
-    rainSub$exDec <- 1:30
+    rainSub$exDec <- 30:1
     rainSub$exDec <- rainSub[,paste0(sites2[j], "_Rainfall")] * (1/rainSub$exDec) 
     weatherdf$Monthly_rainfall[k] <- sum(rainSub[paste0(sites2[j], "_Rainfall")])
     weatherdf$Monthly_rainfall_weighted[k] <- sum(rainSub$exDec)
@@ -152,26 +151,3 @@ for (j in 1:length(sites2)){
 # merge data into long format and save -----------------------------------------------------------
 weatherdf <- do.call(rbind, list(chulaimbo, kisumu, msambweni, ukunda))
 write.csv(weatherdf, "Concatenated_Data/climate_data/gapfilled_climate_data_Kenya.csv", row.names = F)
-
-# plot data --------------------------------------------------------------------------------------
-# par(mfrow=c(2,3), cex=1.2)
-# plot(climateMerged2$kisumu_rainfall_hobo, climateMerged2$kisumu_rain_TRMM, pch=16, xlim=c(0,100), ylim=c(0,100), xlab=c("Kisumu rainfall (mm)"), ylab=c("TRMM (mm)"))
-# abline(0,1, lty=2)
-# abline(lm(climateMerged2$kisumu_rain_TRMM~climateMerged2$kisumu_rainfall_hobo), col='blue', lwd=2)
-# xs <- c(rep("kisumu_temp_mean_hobo", 2), "chulaimbo_temp_mean_hobo", rep("ukunda_temp_mean_hobo", 2), "msambweni_temp_mean_hobo", "chulaimbo_rainfall_hobo", "kisumu_rainfall_hobo", "msambweni_rainfall_hobo", "ukunda_rainfall_hobo", "chulaimbo_rh_mean_hobo", "kisumu_rh_mean_hobo", "msambweni_rh_mean_hobo", "ukunda_rh_mean_hobo")
-# ys <- c("chulaimbo_temp_mean_hobo", "hkki_mean_temp_wu", "hkki_mean_temp_wu", "msambweni_temp_mean_hobo", "hkki_mean_temp_wu", "hkki_mean_temp_wu", rep("hkki_rain_wu", 2), rep("hkmo_rain_wu", 2), rep("hkki_mean_humidity_wu", 2), rep("hkmo_mean_humidity_wu", 2))
-# 
-# for (i in 1:length(xs)){
-#   fileName <- paste0("Kenya/Figures/climate/temp_rain_rh_", xs[i], "_v_", ys[i], ".tiff")
-#   if (i < 7){
-#     fileName <- gsub("_temp_mean_hobo|hkki_mean_temp_|hkmo_mean_temp|rain_|rh_", "", fileName)
-#   } else if (i >= 7 & i < 11) {
-#     fileName <- gsub("_rainfall_hobo|_hkki_rain|_hkmo_rain|temp_|rh_", "", fileName)
-#   } else {
-#     fileName <- gsub("_rh_mean_hobo|hkki_mean_humidity_|hkmo_mean_humidity_|temp_|rain_", "", fileName)
-#   }
-#   tiff(fileName, width = 793, height = 471, units = "px")
-#   plot(climateMerged2[,xs[i]], climateMerged2[,ys[i]], xlim = c(15,32), ylim = c(15,32), col = alpha("blue", 0.5), pch=16, xlab = xs[i], ylab = ys[i])
-#   abline(a=0, b=1)
-#   dev.off()
-# }
