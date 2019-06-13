@@ -1,31 +1,35 @@
 # concatenate climate data from Ecuador field sites ---------------------------------------
-
 # Huaquillas:
-# 2000-01-01 - 2012-12-31 Temperature, rainfall
-# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
-# 2014-05-27 - 2015-05-26 Temperature, humidity, rainfall
-# 2016-01-01 - 2017-12-10 Temperature, humidity, rainfall
-# 2016-06-15 - 2018-07-04 Temperature, humidity, rainfall
+# 2000-01-01 - 2012-12-31 Temperature, rainfall (h0012 - CSV)
+# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall (h14r)
+# 2014-05-27 - 2015-05-26 Temperature, humidity, rainfall (h13r)
+# 2016-01-01 - 2017-12-10 Temperature, humidity, rainfall (huaquillas)
+# 2016-06-15 - 2018-07-04 Temperature, humidity, rainfall (h00r)
+# 2018-04-21 - 2019-01-07 Temperature, humidity, rainfall (huaq1819)
 # 
 # Machala:
-# 1985-12-01 - 2016-12-31 Temperature, rainfall
-# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
-# 2014-05-18 - 2015-05-17 Temperature, humidity, rainfall
-# 2016-01-01 - 2018-09-16 Temperature, humidity, rainfall
+# 1985-12-01 - 2016-12-31 Temperature, rainfall (m8516)
+# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall (m14r)
+# 2014-05-18 - 2015-05-17 Temperature, humidity, rainfall (m13r)
+# 2016-01-01 - 2017-12-10 Temperature, humidity, rainfall (machala)
+# 2016-08-28 - 2018-09-16 Temperature, humidity, rainfall (mach)
+# 2018-06-27 - 2019-02-12 Temperature, humidity, rainfall (mach1819)
 # 
 # Portovelo:
-# 2000-01-01 - 2012-12-31 Temperature, rainfall
-# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
-# 2014-05-18 - 2015-05-17 Temperature, humidity, rainfall
-# 2016-03-10 - 2017-12-08 Temperature, humidity, rainfall
-# 2016-06-21 - 2018-07-10 Temperature, humidity, rainfall
+# 2000-01-01 - 2012-12-31 Temperature, rainfall (z0012)
+# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall (p14r)
+# 2014-05-18 - 2015-05-17 Temperature, humidity, rainfall (p13r)
+# 2016-03-10 - 2017-12-08 Temperature, humidity, rainfall (porotvelo)
+# 2016-06-21 - 2018-07-10 Temperature, humidity, rainfall (p00r)
+# 2018-04-23 - 2019-01-09 Temperature, humidity, rainfall (port1819)
 # 
 # Zaruma:
-# 2000-01-01 - 2012-12-31 Temperature, rainfall
-# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall
-# 2014-05-28 - 2015-05-27 Temperature, humidity, rainfall
-# 2016-01-04 - 2017-12-07 Temperature, humidity, rainfall
-# 2016-06-21 - 2018-05-01 Temperature, humidity, rainfall
+# 2000-01-01 - 2012-12-31 Temperature, rainfall (z0012)
+# 2013-03-20 - 2014-05-16 Temperature, humidity, rainfall (z14r)
+# 2014-05-28 - 2015-05-27 Temperature, humidity, rainfall (z13r)
+# 2016-01-04 - 2017-12-07 Temperature, humidity, rainfall (zaruma)
+# 2016-06-21 - 2018-05-01 Temperature, humidity, rainfall (z00r)
+# 2018-04-23 - 2019-01-19 Temperature, humidity, rainfall (zar1819)
 
 rm(list=ls()) #remove previous variable assignments
 
@@ -33,204 +37,181 @@ rm(list=ls()) #remove previous variable assignments
 library(tidyverse)
 library(plyr)
 
-# load and format 2000-2012 climate data (2000-2016 for Machala) ------------------------------------
-h0012 <- read.csv("Ecuador/EVP_Ecuador_Data/climate_Huaquillas.csv", head=T)
-m8516 <- read.csv("Ecuador/EVP_Ecuador_Data/climate_Machala.csv", head=T)
-z0012 <- read.csv("Ecuador/EVP_Ecuador_Data/climate_Zaruma_Portobello.csv", head=T)
+# list files
+ecuador.climate.files <- list.files("Ecuador/EVP_Ecuador_Data/climate_data/")
 
-# adjust mean temp of -999 in Huaquillas by adding average difference between Tmin and Tmean to Tmin
-h0012$Tmean <- ifelse(h0012$Tmean < 0, h0012$Tmin + 1.4, h0012$Tmean)
+# load and format weather data ----------------------------------------
+# load csv files
+ecuador.csv.files <- ecuador.climate.files[grepl(".csv", ecuador.climate.files)]
+csvnames <- c("h0012", "m8516", "z0012")
 
-# calculate mean temperature for Machala
-m8516$Tmean <- (m8516$Tmax+m8516$Tmin)/2
-
-# format dates and column names
-clim.b4.2016 <- list(h0012, m8516, z0012)
-clim.b4.2016.names <- c("h0012", "m8516", "z0012")
-
-for (i in 1:length(clim.b4.2016)){
-  clim1 <- clim.b4.2016[[i]]
-  clim1$date <- as.Date(paste(clim1$Yr, clim1$Mo, clim1$Day, sep="-"), "%Y-%m-%d")
-  clim1$RH <- NA
-  clim1 <- clim1[,c("date", "Tmean", "RH", "RR")]
-  colnames(clim1) <- c("date", "temp", "RH", "precip")
-  assign(clim.b4.2016.names[i], clim1)
+for (i in 1:length(ecuador.csv.files)){
+  fileName <- paste0("Ecuador/EVP_Ecuador_Data/climate_data/", ecuador.csv.files[i])
+  x <- read.csv(fileName, head=T)
+  x$date <- as.Date(paste(x$Yr, x$Mo, x$Day, sep="-"), "%Y-%m-%d") #as.Date(strptime(x$Date, "%Y%m%d"), "%Y-%m-%d")
+  x$RH <- NA
+  if (csvnames[i] == "h0012"){
+    # adjust mean temp of -999 in Huaquillas by adding average difference between Tmin and Tmean to Tmin
+    x$Tmean <- ifelse(x$Tmean < 0, x$Tmin + 1.4, x$Tmean)
+  }
+  if (csvnames[i] == "m8516"){
+    # calculate mean temperature for Machala
+    x$Tmean <- (x$Tmax+x$Tmin)/2
+  }
+  x <- x[,c("date", "Tmean", "RH", "RR")]
+  colnames(x) <- c("date", "temp", "RH", "precip")
+  assign(csvnames[i], x)
 }
 
-# subset Machala data by date
-m8516 <- subset(m8516, date >= "2000-01-01" & date < "2013-03-20")
+# load rdata files
+ecuador.rdata.climate <- ecuador.climate.files[grepl(".RData", ecuador.climate.files)]
 
-# load 2013-2018 climate data ----------------------------------------------------------------------
-ecuador.climate.files <- list.files("Ecuador/EVP_Ecuador_Data/")
-ecuador.climate.files <- ecuador.climate.files[grepl(".RData", ecuador.climate.files)]
-
-for (j in 1:length(ecuador.climate.files)){
-  fileName <- paste0("Ecuador/EVP_Ecuador_Data/", ecuador.climate.files[j])
+for (j in 1:length(ecuador.rdata.climate)){
+  fileName <- paste0("Ecuador/EVP_Ecuador_Data/climate_data/", ecuador.rdata.climate[j])
   load(fileName)
 }
 
-# remove duplicated dates 
-h00r <- h00r[!h00r$date %in% huaquillas$date,]
-p00r <- p00r[!p00r$date %in% portovelo$date,]
-z00r <- z00r[!z00r$date %in% zaruma$date,]
+# load and format NOAA GSOD (Global Summary of the Day) from 
+# https://www7.ncdc.noaa.gov/CDO/cdoselect.cmd?datasetabbv=GSOD&countryabbv&georegionabbv
+# ecuador.txt.climate <- ecuador.climate.files[grepl(".txt", ecuador.climate.files)]
+# txtName <- c("GSOD_Atahualpa", "GSOD_Loja", "GSOD_Santa_Rosa_Aeropuerto")
+# 
+# for (k in 1:length(ecuador.txt.climate)){
+#   fileName <- paste0("Ecuador/EVP_Ecuador_Data/climate_data/", ecuador.txt.climate[k])
+#   x <- read.delim(fileName, head=TRUE, sep=',')
+#   x$mean_temp_gsod <- round((x$TEMP-32)*(5/9), 2)
+#   x$Date = as.Date(paste(substr(x$YEARMODA, 1, 4), substr(x$YEARMODA, 5, 6), substr(x$YEARMODA, 7, 8), sep="-"), "%Y-%m-%d")
+#   x$rain_gsod <- as.numeric(gsub("[A-Z]|99.99", "", x$PRCP)) 
+#   x$rain_gsod <- round((x$rain_gsod * 25.4), 2)
+#   x <- x[,c("Date", "mean_temp_gsod", "rain_gsod")]
+#   assign(txtName[k],x)
+# }
 
-# combine all data by site
-Huaquillas <- do.call(rbind, list(h00r, h0012, h13r, h14r, huaquillas))
-Machala <- do.call(rbind, list(m8516, m13r, m14r, machala))
-Portovelo <- do.call(rbind, list(p00r, p13r, p14r, portovelo))
-Zaruma <- do.call(rbind, list(z00r, z0012, z13r, z14r, zaruma))
+# format temperature and site
+Huaquillas <- do.call(rbind, setNames(lapply(ls(pattern="^h"), function(x) get(x)), ls(pattern="^h")))
+Machala <- do.call(rbind, setNames(lapply(ls(pattern="^m"), function(x) get(x)), ls(pattern="^m")))
+Portovelo <- do.call(rbind, setNames(lapply(ls(pattern="^p"), function(x) get(x)), ls(pattern="^p")))
+Zaruma <- do.call(rbind, setNames(lapply(ls(pattern="^z"), function(x) get(x)), ls(pattern="^z")))
 
-# change column names
-ecuador.climate <- list(Huaquillas, Machala, Portovelo, Zaruma)
-ecuador.sites <- c("Huaquillas", "Machala", "Portovelo", "Zaruma")
+# add column with site name
+Huaquillas$Site <- "Huaquillas"
+Machala$Site <- "Machala"
+Portovelo$Site <- "Portovelo"
+Zaruma$Site <- "Zaruma"
 
-for (k in 1:length(ecuador.climate)){
-  tempdf <- ecuador.climate[[k]]
-  colnames(tempdf) <- c("Date", paste0("GF_", ecuador.sites[k], "_mean_temp"), paste0("GF_", ecuador.sites[k], "_humidity"), paste0("GF_", ecuador.sites[k], "_rain"))
-  assign(ecuador.sites[k], tempdf)
+# replace suspect temperature & humidity values with NA (data issue for Portovelo, ~90 dates with temp of 0 degrees and 1 with 16 degrees)
+Portovelo$temp <- ifelse(Portovelo$temp < 17, NA, Portovelo$temp)
+Zaruma$temp <- ifelse(Zaruma$temp > 30, NA, Zaruma$temp)
+
+Huaquillas$RH <- ifelse(Huaquillas$RH < 48, NA, Huaquillas$RH)
+Machala$RH <- ifelse(Machala$RH < 48, NA, Machala$RH)
+Portovelo$RH <- ifelse(Portovelo$RH < 48, NA, Portovelo$RH)
+Zaruma$RH <- ifelse(Zaruma$RH < 48, NA, Zaruma$RH)
+
+# combine all data
+weather <- do.call(rbind, list(Huaquillas, Machala, Portovelo, Zaruma))
+
+# average data for each date (some datasets overlap)
+weather2 <- ddply(weather, .(date, Site), summarize
+                 , temp = ifelse(all(is.na(temp))==FALSE, mean(temp, na.rm=T), NA) 
+                 , rain = ifelse(all(is.na(precip))==FALSE, mean(precip, na.rm=T), NA)
+                 , humidity = ifelse(all(is.na(RH))==FALSE, mean(RH, na.rm=T), NA))
+
+# reshape from long to wide, making sure all dates are included between minDate and maxDate
+minDate <- as.Date('2001-01-01', '%Y-%m-%d')
+maxDate <- as.Date('2019-02-01', '%Y-%m-%d')
+wide_data <- as.data.frame(seq.Date(minDate, maxDate, by=1))
+colnames(wide_data) <- "date"
+sites <- unique(weather2$Site)
+
+for (l in 1:length(sites)){
+  x <- subset(weather2, Site == sites[l])
+  x <- x[, !names(x) %in% c("Site")]
+  colnames(x)[2:4] <- paste(sites[l], colnames(x)[2:4], sep='_')
+  wide_data <- merge(wide_data, x, by="date", all.x=T)
 }
 
-# merge data -------------------------------------------------------------------------------------
-gapfilled_data <- list(Huaquillas, Machala, Portovelo, Zaruma) %>% reduce(full_join, by = "Date")
+# calculate average value by day and site across all years
+wide_data$Month_Day <- format(wide_data$date, "%m-%d")
+ltm <- wide_data
+ltm <- ddply(ltm, .(Month_Day), summarize
+             , Huaquillas_temp_ltm = ifelse(all(is.na(Huaquillas_temp)), NA, mean(Huaquillas_temp, na.rm=T))
+             , Machala_temp_ltm = ifelse(all(is.na(Machala_temp)), NA, mean(Machala_temp, na.rm=T))
+             , Portovelo_temp_ltm = ifelse(all(is.na(Portovelo_temp)), NA, mean(Portovelo_temp, na.rm=T))
+             , Zaruma_temp_ltm = ifelse(all(is.na(Zaruma_temp)), NA, mean(Zaruma_temp, na.rm=T))
+             , Huaquillas_rain_ltm = ifelse(all(is.na(Huaquillas_rain)), NA, mean(Huaquillas_rain, na.rm=T))
+             , Machala_rain_ltm = ifelse(all(is.na(Machala_rain)), NA, mean(Machala_rain, na.rm=T))
+             , Portovelo_rain_ltm = ifelse(all(is.na(Portovelo_rain)), NA, mean(Portovelo_rain, na.rm=T))
+             , Zaruma_rain_ltm = ifelse(all(is.na(Zaruma_rain)), NA, mean(Zaruma_rain, na.rm=T))
+             , Huaquillas_rh_ltm = ifelse(all(is.na(Huaquillas_humidity)), NA, mean(Huaquillas_humidity, na.rm=T))
+             , Machala_rh_ltm = ifelse(all(is.na(Machala_humidity)), NA, mean(Machala_humidity, na.rm=T))
+             , Portovelo_rh_ltm = ifelse(all(is.na(Portovelo_humidity)), NA, mean(Portovelo_humidity, na.rm=T))
+             , Zaruma_rh_ltm = ifelse(all(is.na(Zaruma_humidity)), NA, mean(Zaruma_humidity, na.rm=T)))
 
-# make all climate columns numeric
-colsToNum <- colnames(gapfilled_data)[grepl("GF_", names(gapfilled_data))]
-gapfilled_data[,colsToNum] <- lapply(gapfilled_data[,colsToNum], as.numeric)
+wide_data <- merge(wide_data, ltm, by="Month_Day")
 
-# make sure all dates are included included
-alldates <- as.data.frame(seq.Date(min(gapfilled_data$Date), max(gapfilled_data$Date), by="day"))
-colnames(alldates) <- "Date"
-gapfilled_data <- merge(alldates, gapfilled_data, by="Date", all = T)
+# fill in missing temperature data -----------------------------------------------------------------
+# Huaquillas
+fill_ha_w_ma <- lm(Huaquillas_temp ~ Machala_temp, data = wide_data)
+wide_data$Huaquillas_Temperature <- ifelse(!is.na(wide_data$Huaquillas_temp), wide_data$Huaquillas_temp, round(coef(fill_ha_w_ma)[[1]] + coef(fill_ha_w_ma)[[2]] * wide_data$Machala_temp, 1))
+wide_data$Huaquillas_Temperature <- ifelse(!is.na(wide_data$Huaquillas_Temperature), wide_data$Huaquillas_Temperature, wide_data$Huaquillas_temp_ltm)
 
-# Gapfill data -----------------------------------------------------------------------------------
-# calculate regression equations for temperature
-fill.port.w.zar.temp = lm(GF_Portovelo_mean_temp ~ GF_Zaruma_mean_temp, data=gapfilled_data)
-fill.zar.w.port.temp = lm(GF_Zaruma_mean_temp ~ GF_Portovelo_mean_temp, data=gapfilled_data)
-fill.mach.w.huq.temp = lm(GF_Machala_mean_temp ~ GF_Huaquillas_mean_temp, data=gapfilled_data)
-fill.huq.w.mach.temp = lm(GF_Huaquillas_mean_temp ~ GF_Machala_mean_temp, data=gapfilled_data)
+# Machala
+fill_ma_w_ha <- lm(Machala_temp ~ Huaquillas_temp, data = wide_data)
+wide_data$Machala_Temperature <- ifelse(!is.na(wide_data$Machala_temp), wide_data$Machala_temp, round(coef(fill_ma_w_ha)[[1]] + coef(fill_ma_w_ha)[[2]] * wide_data$Huaquillas_temp, 1))
+wide_data$Machala_Temperature <- ifelse(!is.na(wide_data$Machala_Temperature), wide_data$Machala_Temperature, wide_data$Machala_temp_ltm)
 
-# calculate regression equations for humidity
-fill.port.w.zar.hum = lm(GF_Portovelo_humidity ~ GF_Zaruma_humidity, data=gapfilled_data)
-fill.zar.w.port.hum = lm(GF_Zaruma_humidity ~ GF_Portovelo_humidity, data=gapfilled_data)
-fill.mach.w.huq.hum = lm(GF_Machala_humidity ~ GF_Huaquillas_humidity, data=gapfilled_data)
-fill.huq.w.mach.hum = lm(GF_Huaquillas_humidity ~ GF_Machala_humidity, data=gapfilled_data)
+# Portovelo
+fill_po_w_za <- lm(Portovelo_temp ~ Zaruma_temp, data = wide_data)
+wide_data$Portovelo_Temperature <- ifelse(!is.na(wide_data$Portovelo_temp), wide_data$Portovelo_temp, round(coef(fill_po_w_za)[[1]] + coef(fill_po_w_za)[[2]] * wide_data$Zaruma_temp, 1))
+wide_data$Portovelo_Temperature <- ifelse(!is.na(wide_data$Portovelo_Temperature), wide_data$Portovelo_Temperature, wide_data$Portovelo_temp_ltm)
 
-# calculate regression equations for humidity
-fill.port.w.zar.rain = lm(GF_Portovelo_rain ~ GF_Zaruma_rain, data=gapfilled_data)
-fill.zar.w.port.rain = lm(GF_Zaruma_rain ~ GF_Portovelo_rain, data=gapfilled_data)
-fill.mach.w.huq.rain = lm(GF_Machala_rain ~ GF_Huaquillas_rain, data=gapfilled_data)
-fill.huq.w.mach.rain = lm(GF_Huaquillas_rain ~ GF_Machala_rain, data=gapfilled_data)
+# Zaruma
+fill_za_w_po <- lm(Zaruma_temp ~ Portovelo_temp, data = wide_data)
+wide_data$Zaruma_Temperature <- ifelse(!is.na(wide_data$Zaruma_temp), wide_data$Zaruma_temp, round(coef(fill_za_w_po)[[1]] + coef(fill_za_w_po)[[2]] * wide_data$Portovelo_temp, 1))
+wide_data$Zaruma_Temperature <- ifelse(!is.na(wide_data$Zaruma_Temperature), wide_data$Zaruma_Temperature, wide_data$Portovelo_temp_ltm)
 
-# plot climate relationships
-# plot(gapfilled_data$GF_Zaruma_mean_temp, gapfilled_data$GF_Portovelo_mean_temp, pch=16, xlab="Zaruma", ylab="Portovelo", main="Mean temperature", xlim=c(18,29), ylim=c(18,29))
-# abline(0,1)
-# abline(fill.port.w.zar.temp, col='blue', lwd=2)
-# 
-# plot(gapfilled_data$GF_Zaruma_humidity, gapfilled_data$GF_Portovelo_humidity, pch=16, xlab="Zaruma", ylab="Portovelo", main="Humidity", xlim=c(50,100), ylim=c(50,100))
-# abline(0,1)
-# abline(fill.port.w.zar.hum, col='blue', lwd=2)
-# 
-# plot(gapfilled_data$GF_Zaruma_rain, gapfilled_data$GF_Portovelo_rain, pch=16, xlab="Portovelo", ylab="Zaruma", main="Daily rainfall", xlim=c(0,25), ylim=c(0,25))
-# abline(0,1)
-# abline(fill.port.w.zar.rain, col='blue', lwd=2)
-# 
-# plot(gapfilled_data$GF_Machala_mean_temp, gapfilled_data$GF_Huaquillas_mean_temp, pch=16, xlab="Machala", ylab="Huaquillas", main="Mean temperature", xlim=c(20,31), ylim=c(20,31))
-# abline(0,1)
-# abline(fill.huq.w.mach.temp, col='blue', lwd=2)
-# 
-# plot(gapfilled_data$GF_Machala_humidity, gapfilled_data$GF_Huaquillas_humidity, pch=16, xlab="Machala", ylab="Huaquillas", main="Humidity", xlim=c(65,100), ylim=c(65,100))
-# abline(0,1)
-# abline(fill.huq.w.mach.hum, col='blue', lwd=2)
-# 
-# plot(gapfilled_data$GF_Machala_rain, gapfilled_data$GF_Huaquillas_rain, pch=16, xlab="Machala", ylab="Huaquillas", main="Daily rain", xlim=c(0,150), ylim=c(0,150))
-# abline(0,1)
-# abline(fill.huq.w.mach.rain, col='blue', lwd=2)
+# fill in missing rainfall data -----------------------------------------------------------------
+wide_data$Huaquillas_Rainfall <- ifelse(!is.na(wide_data$Huaquillas_rain), wide_data$Huaquillas_rain, wide_data$Huaquillas_rain_ltm)
+wide_data$Machala_Rainfall <- ifelse(!is.na(wide_data$Machala_rain), wide_data$Machala_rain, wide_data$Machala_rain_ltm)
+wide_data$Portovelo_Rainfall <- ifelse(!is.na(wide_data$Portovelo_rain), wide_data$Portovelo_rain, wide_data$Portovelo_rain_ltm)
+# fill in feb 29th's with feb 28
+wide_data$Portovelo_Rainfall <- ifelse(!is.na(wide_data$Portovelo_Rainfall), wide_data$Portovelo_Rainfall, mean(wide_data$Portovelo_Rainfall[wide_data$Month_Day=='02-28']))
+wide_data$Zaruma_Rainfall <- ifelse(!is.na(wide_data$Zaruma_rain), wide_data$Zaruma_rain, wide_data$Zaruma_rain_ltm)
 
-# gap fill temperature data
-gapfilled_data$GF_Huaquillas_mean_temp <- ifelse(is.na(gapfilled_data$GF_Huaquillas_mean_temp), round(coef(fill.huq.w.mach.temp)[[1]] + coef(fill.huq.w.mach.temp)[[2]] * gapfilled_data$GF_Machala_mean_temp, 1), gapfilled_data$GF_Huaquillas_mean_temp)
-gapfilled_data$GF_Machala_mean_temp <- ifelse(is.na(gapfilled_data$GF_Machala_mean_temp), round(coef(fill.mach.w.huq.temp)[[1]] + coef(fill.mach.w.huq.temp)[[2]] * gapfilled_data$GF_Huaquillas_mean_temp, 1), gapfilled_data$GF_Machala_mean_temp)
-gapfilled_data$GF_Portovelo_mean_temp <- ifelse(is.na(gapfilled_data$GF_Portovelo_mean_temp), round(coef(fill.port.w.zar.temp)[[1]] + coef(fill.port.w.zar.temp)[[2]] * gapfilled_data$GF_Zaruma_mean_temp, 1), gapfilled_data$GF_Portovelo_mean_temp)
-gapfilled_data$GF_Zaruma_mean_temp <- ifelse(is.na(gapfilled_data$GF_Zaruma_mean_temp), round(coef(fill.zar.w.port.temp)[[1]] + coef(fill.zar.w.port.temp)[[2]] * gapfilled_data$GF_Zaruma_mean_temp, 1), gapfilled_data$GF_Zaruma_mean_temp)
+# fill in missing humidity data -----------------------------------------------------------------
+wide_data$Huaquillas_Humidity <- ifelse(!is.na(wide_data$Huaquillas_humidity), wide_data$Huaquillas_humidity, wide_data$Huaquillas_rh_ltm)
+wide_data$Machala_Humidity <- ifelse(!is.na(wide_data$Machala_humidity), wide_data$Machala_humidity, wide_data$Machala_rh_ltm)
+wide_data$Portovelo_Humidity <- ifelse(!is.na(wide_data$Portovelo_humidity), wide_data$Portovelo_humidity, wide_data$Portovelo_rh_ltm) # still four days missing
+# fill in feb 29th's with feb 28
+wide_data$Portovelo_Humidity <- ifelse(!is.na(wide_data$Portovelo_Humidity), wide_data$Portovelo_Humidity, mean(wide_data$Portovelo_Humidity[wide_data$Month_Day=='02-28']))
+wide_data$Zaruma_Humidity <- ifelse(!is.na(wide_data$Zaruma_humidity), wide_data$Zaruma_humidity, wide_data$Zaruma_rh_ltm)
 
-# gap fill humidity data
-gapfilled_data$GF_Huaquillas_humidity <- ifelse(is.na(gapfilled_data$GF_Huaquillas_humidity), round(coef(fill.huq.w.mach.hum)[[1]] + coef(fill.huq.w.mach.hum)[[2]] * gapfilled_data$GF_Machala_humidity, 1), gapfilled_data$GF_Huaquillas_humidity)
-gapfilled_data$GF_Machala_humidity <- ifelse(is.na(gapfilled_data$GF_Machala_humidity), round(coef(fill.mach.w.huq.hum)[[1]] + coef(fill.mach.w.huq.hum)[[2]] * gapfilled_data$GF_Huaquillas_humidity, 1), gapfilled_data$GF_Machala_humidity)
-gapfilled_data$GF_Portovelo_humidity <- ifelse(is.na(gapfilled_data$GF_Portovelo_humidity), round(coef(fill.port.w.zar.hum)[[1]] + coef(fill.port.w.zar.hum)[[2]] * gapfilled_data$GF_Zaruma_humidity, 1), gapfilled_data$GF_Portovelo_humidity)
-gapfilled_data$GF_Zaruma_humidity <- ifelse(is.na(gapfilled_data$GF_Zaruma_humidity), round(coef(fill.zar.w.port.hum)[[1]] + coef(fill.zar.w.port.hum)[[2]] * gapfilled_data$GF_Zaruma_humidity, 1), gapfilled_data$GF_Zaruma_humidity)
+# calculate 30 day aggregated rainfall values ---------------------------------------------------
+wide_data <- wide_data[order(wide_data$date),]
 
-# gap fill rainfall data
-gapfilled_data$GF_Huaquillas_rain <- ifelse(is.na(gapfilled_data$GF_Huaquillas_rain), round(coef(fill.huq.w.mach.rain)[[1]] + coef(fill.huq.w.mach.rain)[[2]] * gapfilled_data$GF_Machala_rain, 1), gapfilled_data$GF_Huaquillas_rain)
-gapfilled_data$GF_Machala_rain <- ifelse(is.na(gapfilled_data$GF_Machala_rain), round(coef(fill.mach.w.huq.rain)[[1]] + coef(fill.mach.w.huq.rain)[[2]] * gapfilled_data$GF_Huaquillas_rain, 1), gapfilled_data$GF_Machala_rain)
-gapfilled_data$GF_Portovelo_rain <- ifelse(is.na(gapfilled_data$GF_Portovelo_rain), round(coef(fill.port.w.zar.rain)[[1]] + coef(fill.port.w.zar.rain)[[2]] * gapfilled_data$GF_Zaruma_rain, 1), gapfilled_data$GF_Portovelo_rain)
-gapfilled_data$GF_Zaruma_rain <- ifelse(is.na(gapfilled_data$GF_Zaruma_rain), round(coef(fill.zar.w.port.rain)[[1]] + coef(fill.zar.w.port.rain)[[2]] * gapfilled_data$GF_Zaruma_rain, 1), gapfilled_data$GF_Zaruma_rain)
+for (m in 1:length(sites)){
+  weatherdf <- wide_data[, c("date", paste0(sites[m], "_Temperature"), paste0(sites[m], "_Rainfall"), paste0(sites[m], "_Humidity"))]
+  weatherdf <- weatherdf[order(weatherdf$date),]
+  weatherdf$Monthly_rainfall <- NA
+  weatherdf$Monthly_rainfall_weighted <- NA
+  weatherdf$Monthly_rainy_days_25 <- NA
+  for (n in 30:nrow(weatherdf)){
+    rainSub <- subset(weatherdf, date >= date[n] - 29 & date <= date[n])
+    rainSub$exDec <- 30:1
+    rainSub$exDec <- rainSub[,paste0(sites[m], "_Rainfall")] * (1/rainSub$exDec) 
+    weatherdf$Monthly_rainfall[n] <- sum(rainSub[paste0(sites[m], "_Rainfall")])
+    weatherdf$Monthly_rainfall_weighted[n] <- sum(rainSub$exDec)
+    weatherdf$Monthly_rainy_days_25[n] <- sum(rainSub[paste0(sites[m], "_Rainfall")] > 2.5)
+  }
+  colnames(weatherdf) <- gsub(paste0(sites[m], "_"), "", colnames(weatherdf))
+  weatherdf$Site <- sites[m]
+  weatherdf <- weatherdf[30:nrow(weatherdf),]
+  assign(sites[m], weatherdf)
+}  
 
-# gap fill additional missing data with long term average daily values by site and month
-gapfilled_data$Month <- substr(gapfilled_data$Date, 6, 7)
-meanValues  <- ddply(gapfilled_data, .(Month), summarize
-                     , Huaquillas_RH = round(mean(GF_Huaquillas_humidity, na.rm=T))
-                     , Machala_RH = round(mean(GF_Machala_humidity, na.rm=T))
-                     , Zaruma_RH = round(mean(GF_Zaruma_humidity, na.rm=T))
-                     , Huaquillas_T = round(mean(GF_Huaquillas_mean_temp, na.rm=T))
-                     , Machala_T = round(mean(GF_Machala_mean_temp, na.rm=T))
-                     , Portovelo_T = round(mean(GF_Zaruma_mean_temp, na.rm=T))
-                     , Zaruma_T = round(mean(GF_Zaruma_mean_temp, na.rm=T))
-                     , Huaquillas_R = round(mean(GF_Huaquillas_rain, na.rm=T))
-                     , Machala_R = round(mean(GF_Machala_rain, na.rm=T))
-                     , Portovelo_R = round(mean(GF_Zaruma_rain, na.rm=T))
-                     , Zaruma_R = round(mean(GF_Zaruma_rain, na.rm=T)))
-
-gapfilled_data <- merge(gapfilled_data, meanValues, by="Month", all.x=T)
-
-# temperature
-gapfilled_data$GF_Huaquillas_mean_temp <- ifelse(is.na(gapfilled_data$GF_Huaquillas_mean_temp), gapfilled_data$Huaquillas_T, gapfilled_data$GF_Huaquillas_mean_temp)
-gapfilled_data$GF_Machala_mean_temp <- ifelse(is.na(gapfilled_data$GF_Machala_mean_temp), gapfilled_data$Machala_T, gapfilled_data$GF_Machala_mean_temp)
-gapfilled_data$GF_Portovelo_mean_temp <- ifelse(is.na(gapfilled_data$GF_Portovelo_mean_temp), gapfilled_data$Portovelo_T, gapfilled_data$GF_Portovelo_mean_temp)
-gapfilled_data$GF_Zaruma_mean_temp <- ifelse(is.na(gapfilled_data$GF_Zaruma_mean_temp), gapfilled_data$Zaruma_T, gapfilled_data$GF_Zaruma_mean_temp)
-
-# humidity
-gapfilled_data$GF_Huaquillas_humidity <- ifelse(is.na(gapfilled_data$GF_Huaquillas_humidity), gapfilled_data$Huaquillas_RH, gapfilled_data$GF_Huaquillas_humidity)
-gapfilled_data$GF_Machala_humidity <- ifelse(is.na(gapfilled_data$GF_Machala_humidity), gapfilled_data$Machala_RH, gapfilled_data$GF_Machala_humidity)
-gapfilled_data$GF_Portovelo_humidity <- ifelse(is.na(gapfilled_data$GF_Portovelo_humidity), gapfilled_data$Zaruma_RH, gapfilled_data$GF_Portovelo_humidity)
-gapfilled_data$GF_Zaruma_humidity <- ifelse(is.na(gapfilled_data$GF_Zaruma_humidity), gapfilled_data$Zaruma_RH, gapfilled_data$GF_Zaruma_humidity)
-
-# rainfall
-gapfilled_data$GF_Huaquillas_rain <- ifelse(is.na(gapfilled_data$GF_Huaquillas_rain), gapfilled_data$Huaquillas_R, gapfilled_data$GF_Huaquillas_rain)
-gapfilled_data$GF_Machala_rain <- ifelse(is.na(gapfilled_data$GF_Machala_rain), gapfilled_data$Machala_R, gapfilled_data$GF_Machala_rain)
-gapfilled_data$GF_Portovelo_rain <- ifelse(is.na(gapfilled_data$GF_Portovelo_rain), gapfilled_data$Zaruma_R, gapfilled_data$GF_Portovelo_rain)
-gapfilled_data$GF_Zaruma_rain <- ifelse(is.na(gapfilled_data$GF_Zaruma_rain), gapfilled_data$Zaruma_R, gapfilled_data$GF_Zaruma_rain)
-
-# create cumulative rainfall in prior week for each day
-gapfilled_data <- gapfilled_data[order(gapfilled_data$Date),]
-
-gapfilled_data$GF_Huaquillas_cumRain <- NA
-gapfilled_data$GF_Machala_cumRain <- NA
-gapfilled_data$GF_Portovelo_cumRain <- NA
-gapfilled_data$GF_Zaruma_cumRain <- NA
-
-for (n in 7:nrow(gapfilled_data)){
-  rainSub <- subset(gapfilled_data, Date >= Date[n] - 6 & Date <= Date[n])
-  gapfilled_data$GF_Huaquillas_cumRain[n] <- sum(rainSub$GF_Huaquillas_rain)
-  gapfilled_data$GF_Machala_cumRain[n] <- sum(rainSub$GF_Machala_rain)
-  gapfilled_data$GF_Portovelo_cumRain[n] <- sum(rainSub$GF_Portovelo_rain)
-  gapfilled_data$GF_Zaruma_cumRain[n] <- sum(rainSub$GF_Zaruma_rain)
-}
-
-# create number of rainy days > 1mm/day in prior month for each day
-gapfilled_data$GF_Huaquillas_rainyDays <- NA
-gapfilled_data$GF_Machala_rainyDays <- NA
-gapfilled_data$GF_Portovelo_rainyDays <- NA
-gapfilled_data$GF_Zaruma_rainyDays <- NA
-
-for (o in 30:nrow(gapfilled_data)){
-  rainSub <- subset(gapfilled_data, Date >= Date[o] - 29 & Date <= Date[o])
-  gapfilled_data$GF_Huaquillas_rainyDays[o] <- sum(rainSub$GF_Huaquillas_rain > 1)
-  gapfilled_data$GF_Machala_rainyDays[o] <- sum(rainSub$GF_Machala_rain > 1)
-  gapfilled_data$GF_Portovelo_rainyDays[o] <- sum(rainSub$GF_Portovelo_rain > 1)
-  gapfilled_data$GF_Zaruma_rainyDays[o] <- sum(rainSub$GF_Zaruma_rain > 1)
-}
-
-colsToKeep <- colnames(gapfilled_data)[!grepl("_T|_RH|_R|Month", names(gapfilled_data))]
-GF_data <- gapfilled_data[,colsToKeep]
-
-# save data
-write.csv(GF_data, "Concatenated_Data/climate_data/gapfilled_climate_data_Ecuador_2000-2018.csv", row.names=F)
+# merge data into long format and save -----------------------------------------------------------
+weatherdf <- do.call(rbind, list(Huaquillas, Machala, Portovelo, Zaruma))
+colnames(weatherdf)[1] <- "Date"
+weatherdf[,c(2:7)] <- lapply(weatherdf[,c(2:7)], function(x) round(x,2))
+write.csv(weatherdf, "Concatenated_Data/climate_data/gapfilled_climate_data_Ecuador.csv", row.names = F)
