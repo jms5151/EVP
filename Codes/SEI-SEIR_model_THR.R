@@ -1,11 +1,11 @@
 # Temperature, humidity, and rainfall dependent SEI-SEIR model
 seiseir_model_thr <- function(t, state, parameters) {
   with(as.list(c(state,parameters)), {
-    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], hum[t], rain[t]))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
-    dM2 <- (a(temp[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t]))*M2
+    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], hum[t], rain[t], Rmax, (S+E+I+R)))),0)-(a(temp[t], hum[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
+    dM2 <- (a(temp[t], hum[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t]))*M2
     dM3 <- PDR(temp[t])*M2-mu_th(temp[t], hum[t])*M3
-    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
-    dE <- a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
+    dS <- -a(temp[t], hum[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dE <- a(temp[t], hum[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
     dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360 - ie*I
     dR <- (1.0/5.0)*I - DR*(R/1000)/360 - ie*R
     list(c(dM1, dM2, dM3, dS, dE, dI, dR))
@@ -63,8 +63,8 @@ pMI <- function(temp){
 }
 
 # adult mosquito mortality rate (1/adult lifespan)
-mu_th <- function(temp, hum){
-  inverted_quadratic(temp,-1.48e-01,9.16,37.73+0.643*(hum/100))
+mu <- function(temp){
+  inverted_quadratic(temp,-1.48e-01,9.16,37.73)
 }
 
 # parasite development rate
@@ -84,15 +84,11 @@ carrying_capacity_th <- function(temp, T0, EA, N, h0){
   (alpha*N*exp(-EA*((temp-T0)^2)/(kappa*(temp+273.0)*(T0+273.0))))
 }
 
-K_th <- function(temp, hum){
-  carrying_capacity_th(temp,29.0,0.05,20000, hum)
-}
-
-K_thr <- function(temp, hum, rain){
-  if(rain >= 55){
-    0.1*K_th(temp, hum)
+K_thr <- function(temp, hum, rain, Rmax, N){
+  if(rain >= Rmax){
+    0.1*carrying_capacity_th(temp,29.0,0.05, N, hum)
   }
   else {
-    K_th(temp, hum)*(rain/55) # linear
+    carrying_capacity_th(temp,29.0,0.05, N, hum)*(rain+0.001/Rmax) # linear
   }
 }
