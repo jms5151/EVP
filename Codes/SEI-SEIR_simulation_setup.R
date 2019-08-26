@@ -3,9 +3,7 @@
 library(deSolve)
 
 # load climate data
-climateData <- read.csv("Concatenated_Data/climate_data/merged_climate_data.csv", head=T, stringsAsFactors = F)
-climateData$Date <- as.Date(climateData$Date, "%Y-%m-%d")
-climateData <- climateData[order(climateData$Date),] 
+load("Concatenated_Data/climate_data/merged_climate_data.RData")
 
 # load and set initial conditions
 init.cond <- read.csv("Concatenated_Data/sensitivity_analyses/LHS_inputs.csv", head=T)
@@ -24,8 +22,8 @@ sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda", "Huaquillas", "Machala"
 population <- c(7304, 547557, 240698, 154048, 57370, 279890, 13670, 25620)
 
 # set birth and death rates
-BRs <- c(rep(31.31,4),rep(20.18,4)) # birth rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
-DRs <- c(rep(5.73,4),rep(5.12,4)) # death rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
+BRs <- c(rep(31.782,4),rep(20.175,4)) # birth rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
+DRs <- c(rep(5.284,4),rep(5.121,4)) # death rates from https://data.worldbank.org/indicator/SP.DYN.CBRT.IN
 
 # model timestep
 timestep = 1/12
