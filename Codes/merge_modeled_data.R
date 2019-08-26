@@ -39,4 +39,3 @@ modeled_data <- merge(modeled_data, traitvar, by=c("Site", "Date"))
 
 # save data
 write.csv(modeled_data, "Concatenated_Data/merged_model_data.csv", row.names = F)
-
