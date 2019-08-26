@@ -14,15 +14,15 @@ colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "Si
 traitFileName <- "Concatenated_Data/model_simulations/SEI-SEIR_simulations_TR_test_diff_rain_functions.csv"
 write.csv(traitDF, traitFileName, row.names = F)
 
-rfunctions_names <- c("Right_skewed", "Quadratic", "Briere")
-rfunctions <- list(K_tr_right_skewed, K_tr_quadratic, K_tr_briere)
+rfunctions_names <- c("Briere", "Inverse", "Quadratic", "Polynomial", "Right_skewed")
+rfunctions <- list(K_tr_briere, K_tr_inverse, K_tr_quadratic, K_tr_poly, K_tr_right_skewed)
 
 for (i in 1:length(sites)){
   climateData2 <- subset(climateData, Site == sites[i])
   climateData2 <- climateData2[complete.cases(climateData2),]
   temp <- climateData2$Temperature
-  rain <- climateData2$Monthly_rainfall
-  Rmax <- mean(rain) + 2*sd(rain)
+  rain <- climateData2$Two_week_rainfall
+  Rmax <- 123
   Date <- climateData2$Date
   H0 <- population[i]
   city <- sites[i]
