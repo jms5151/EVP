@@ -15,7 +15,7 @@ colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "Si
 traitFileName <- "Concatenated_Data/model_simulations/SEI-SEIR_simulations_THR_diff_rain_functions.csv"
 write.csv(traitDF, traitFileName, row.names = F)
 
-rain_types <- c("cumRain", "rainyDays")
+rain_types <- c("cumMonthlyRain")#, "cumRain", "rainyDays")
 
 for (l in 1:length(sites)){
   siteclimatevars <- names(climateData)[grep(sites[l], names(climateData))]
@@ -33,6 +33,8 @@ for (l in 1:length(sites)){
     rain <- climateData2[, grep(rain_types[m], names(climateData2))]
     if (rain_types[m]=="cumRain"){
       RmaxSeq <- seq(55, 85, 10)
+    } else if (rain_types[m]=="cumMonthlyRain") {
+      RmaxSeq <- seq(250, 400, 50)
     } else {
       RmaxSeq <- 30
     }
