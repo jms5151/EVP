@@ -64,13 +64,22 @@ pMI <- function(temp){
 
 # adult mosquito mortality rate (1/adult lifespan)
 # mortality rate with temperature and humidity
-mu_th_linear <- function(temp, hum){
-  inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(0.643*(hum/100)))*0.05
+mu_th <- function(temp, hum){
+  if (hum <= 1){
+    inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(0.01256 + 2.00893*hum))*0.01
+  } else {
+    inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(1.2248 + 0.2673*hum))*0.01
+  }
 }
-
-mu_th_sigmoidal <- function(temp, hum){
-  inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1.01-(0.7/(1+exp(-hum + 55))))*0.05
-}
+# 
+# 
+# mu_th_linear <- function(temp, hum){
+#   inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(0.643*(hum/100)))*0.05
+# }
+# 
+# mu_th_sigmoidal <- function(temp, hum){
+#   inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1.01-(0.7/(1+exp(-hum + 55))))*0.05
+# }
 
 # parasite development rate
 PDR <- function(temp){
@@ -90,24 +99,39 @@ carrying_capacity_th <- function(temp, T0, EA, N, h0){
 }
 
 # carrying capacity with temperature, humidity, and rainfall
-K_trh_briere <- function(temp, hum, rain, Rmax, N){
+# K_trh <- function(temp, hum, rain, N){
+#   max(carrying_capacity_th(temp, 29.0, 0.05, N, hum)*(1.126 + 9.094e-03*rain + -5.933e-04*rain^2 + 5.951e-06*rain^3 + -1.892e-08*rain^4), 1000)
+# }
+
+K_trh_right_skewed <- function(temp, h0, rain, Rmax, N){
   R0 <- 1
   if((rain < R0) | (rain > Rmax)){
-    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, hum), 1000)
+    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
   }
   else {
-    c <- 7.86e-05
-    max(carrying_capacity_th(temp,29.0,0.05, N, hum)*c*rain*(rain-R0)*sqrt(Rmax-rain)/9 + 0.001, 1000)
+    c <- 7.86e-10
+    max(carrying_capacity_th(temp,29.0,0.05, N, h0)*c*rain*(rain-R0)*exp((Rmax-rain)/15)/100000 + 0.001, 1000)
   }
 }
 
-K_trh_quadratic <- function(temp, hum, rain, Rmax, N){
-  R0 <- 0
+K_trh_quadratic <- function(temp, h0, rain, Rmax, N){
+  R0 <- 1
   if((rain < R0) | (rain > Rmax)){
-    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, hum), 1000)
+    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
   }
   else {
     c <- -5.99e-03
-    max(carrying_capacity_th(temp, 29.0, 0.05, N, hum)*(c*(rain-R0)*(rain-Rmax))/abs((c*(Rmax/2-R0)*(Rmax/2-Rmax)))*10 + 0.001, 1000)
+    max(carrying_capacity_th(temp, 29.0, 0.05, N, 6)*(c*(rain-R0)*(rain-Rmax))/2 + 0.001, 1000)
+  }
+}
+
+K_trh_briere <- function(temp, h0, rain, Rmax, N){
+  R0 <- 1
+  if((rain < R0) | (rain > Rmax)){
+    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
+  }
+  else {
+    c <- 7.86e-05
+    max(carrying_capacity_th(temp,29.0,0.05, N, 6)*c*rain*(rain-R0)*sqrt(Rmax-rain)*0.3 + 0.001, 1000)
   }
 }
