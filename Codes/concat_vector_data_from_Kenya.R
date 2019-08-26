@@ -97,11 +97,11 @@ prokopack <- ddply(prokopack, .(Site, Year.Month)
               sum(aedes_agypti_unfed_prokopack_outdoor, na.rm=T) + 
               sum(aedes_agypti_bloodfed_prokopack_outdoor, na.rm=T) + 
               sum(aedes_agypti_half_gravid_prokopack_outdoor, na.rm=T) + 
-              sum(aedes_agypti_gravid_prokopack_outdoor, na.rm=T)))#/length(unique(unique_house_id)))
+              sum(aedes_agypti_gravid_prokopack_outdoor, na.rm=T))/length(unique(unique_house_id)),5)
             , Date = max(date_prokopack))
 
 # save data
-write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack.csv", row.names = F)
+write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack2.csv", row.names = F)
 
 # library(ggplot2)
 # ggplot() + geom_point(data = larvae, aes(x = Year.Month, y = Site))
