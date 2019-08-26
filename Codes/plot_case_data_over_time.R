@@ -1,62 +1,36 @@
 # plot AIC disease cases over time --------------------------------------------
 rm(list=ls()) #remove previous variable assignments
 
-# load library
-library(plotly)
-library(ggplot2)
-library(plyr)
-library(webshot)
+# load data
+load("Concatenated_Data/case_data/merged_case_data.RData")
 
-# Kenya cases ----------------------------------------------------------------
-# source("Codes/concat_cohort_case_data_from_redcap.R") # starts from downloading data
-cases <- read.csv("Kenya/Concatenated_Data/aic_cases_by_month.csv", head=T)
+# plot lab-confirmed data -----------------------------------------------------
+sitenames <- unique(cases$Site)
 
-# plot dengue and chikungunya cases by site over time ------------------------
-sites <- c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda")
-diseases <- c("denv", "chikv")
-
-for (i in 1:length(sites)){
-  diseaseDF <- subset(cases, Site == sites[i])
-  for (j in 1:length(diseases)){
-    diseaseDF$positive <- diseaseDF[,paste0(diseases[j], "_positive")]
-    yaxisTitle <- paste0(toupper(diseases[j]), ' cases')
-    caseplots <- plot_ly() %>%
-      add_trace(data=diseaseDF, x = ~Year.Month, y = ~positive, type = 'bar', color=I('black'))%>%
-    layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = yaxisTitle, showline=TRUE), xaxis = list(title=""))
-    filename <- paste0("Kenya/Figures/Case_data/AIC_monthly_", diseases[j], "_cases_", sites[i], ".png")
-    export(caseplots, file = filename)
+for (i in 1:length(sitenames)){
+  x<-subset(cases, Site == sitenames[i] & Date > '2014-01-01')
+  tiff(paste0("Figures/case_data/dengue_cases_", sitenames[i], ".tiff"))
+  plot(x$Date, x$denv_positive, type='b', pch=16, cex.axis=1.3, cex.lab=1.3, cex=1.3, lwd=2, xlab='Date', ylab='Dengue cases', main=paste0('Dengue ', sitenames[i]), las=1)
+  dev.off()
+  if (sum(x$chikv_positive, na.rm=T)>1){
+    tiff(paste0("Figures/case_data/chikungunya_cases_", sitenames[i], ".tiff"))
+    plot(x$Date, x$chikv_positive, type='b', pch=16, cex.axis=1.3, cex.lab=1.3, cex=1.3, lwd=2, xlab='Date', ylab='Chikungunya cases', main=paste0('Chikungunya ', sitenames[i]), las=1)
+    dev.off()
   }
 }
 
-# Ecuador cases --------------------------------------------------------------
-cases0311 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2003_2011.csv", head=T, stringsAsFactors = F)
-cases1418 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2014_2018.csv", head=T, stringsAsFactors = F)
-cases1418$denv_positive <- cases1418$denv_positive_adjusted
-cases1718 <- read.csv("Concatenated_Data/case_data/cases_by_week_Ecuador_2017_2018.csv", head=T, stringsAsFactors = F)
+# plot clinically suspected data --------------------------------------------
+sitenames2 <- unique(cases$Site[cases$country=="Ecuador"])
 
-sites <- unique(cases1718$Site)
-casesList<-list(cases0311, cases1418, cases1718)
-years<-c("2003-2011", "2014-2018", "2017-2018")
-
-for (x in 1:length(casesList)){
-  cases <- casesList[[x]]
-  for (i in 1:length(sites)){
-    if (years[x] == "2003-2011" & sites[i] == "Zaruma"){
-      cat("no Zaruma plot", "\n")
-    } else {
-      diseaseDF <- subset(cases, Site == sites[i])
-      caseplots <- plot_ly() %>%
-        add_trace(data=diseaseDF, x = ~Year.Month, y = ~denv_positive, type = 'bar', color=I('black'))%>%
-        layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
-      filename <- paste0("Ecuador/Figures/Dengue_cases_", sites[i], "_", years[x], ".png")
-      export(caseplots, file = filename)
-      if (years[x] == "2014-2018"){
-        caseplotsChikv <- plot_ly() %>%
-          add_trace(data=diseaseDF, x = ~Year.Month, y = ~chikv_positive, type = 'bar', color=I('black'))%>%
-          layout(margin=list(l=60,r=60,b=100,t=50), title = sites[i], yaxis = list(title = "Dengue cases", showline=TRUE), xaxis = list(title=""))
-        filenameChikv <- paste0("Ecuador/Figures/Chikungunya_cases_", sites[i], "_", years[x], ".png")
-        export(caseplotsChikv, file = filenameChikv)
-      }
-    }
+for (i in 1:length(sitenames2)){
+  x<-subset(cases, Site == sitenames2[i])
+  tiff(paste0("Figures/case_data/suspected_dengue_cases_", sitenames2[i], ".tiff"))
+  plot(x$Date, x$denv_positive_clinically_diagnosed, type='b', pch=16, cex.axis=1.3, cex.lab=1.3, cex=1.3, lwd=2, xlab='Date', ylab='Dengue cases', main=paste0('Suspected dengue ', sitenames2[i]), las=1)
+  dev.off()
+  if (sum(x$chikv_positive_clinically_diagnosed, na.rm=T)>1){
+    x<-subset(x, Date > '2015-01-01')
+    tiff(paste0("Figures/case_data/suspected_chikungunya_cases_", sitenames[i], ".tiff"))
+    plot(x$Date, x$chikv_positive_clinically_diagnosed, type='b', pch=16, cex.axis=1.3, cex.lab=1.3, cex=1.3, lwd=2, xlab='Date', ylab='Chikungunya cases', main=paste0('Suspected chikungunya ', sitenames2[i]), las=1)
+    dev.off()
   }
 }
