@@ -1,10 +1,10 @@
 # Temperature dependent SEI-SEIR model
 seiseir_model_t <- function(t, state, parameters) {
   with(as.list(c(state,parameters)), {
-    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_t(temp[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_t(temp[t]))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_t(temp[t]))*M1
+    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_t(temp[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_t(temp[t], (S+E+I+R)))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_t(temp[t]))*M1
     dM2 <- (a(temp[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_t(temp[t]))*M2
     dM3 <- PDR(temp[t])*M2-mu_t(temp[t])*M3
-    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*.5*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
     dE <- a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360  - ie*E
     dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360  - ie*I
     dR <- (1.0/5.0)*I - DR*(R/1000)/360  - ie*R
@@ -31,7 +31,7 @@ quadratic <- function(x, c, T0, Tm){
 # This is the general function for the inverted quadratic fit.
 inverted_quadratic <- function(x, c, T0, Tm){
   if((x < T0) | (x > Tm))
-    24.0
+    0.33
   else
     1.0/(c*(x-T0)*(x-Tm))
 }
@@ -64,7 +64,7 @@ pMI <- function(temp){
 
 # adult mosquito mortality rate (1/adult lifespan)
 mu_t <- function(temp){
-  inverted_quadratic(temp,-1.48e-01,9.16,37.73) # scaling helps for Ukunda *1.48
+  inverted_quadratic(temp,-1.48e-01,9.16,37.73)
 }
 
 # parasite development rate
@@ -84,6 +84,6 @@ carrying_capacity_t <- function(temp, T0, EA, N){
   (alpha*N*exp(-EA*((temp-T0)^2)/(kappa*(temp+273.0)*(T0+273.0))))
 }
 
-K_t <- function(temp){
-  carrying_capacity_t(temp,29.0,0.05,20000)
+K_t <- function(temp, N){
+  max(carrying_capacity_t(temp,29.0,0.05,N), 1000)
 }
