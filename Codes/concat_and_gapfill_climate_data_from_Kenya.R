@@ -20,6 +20,8 @@ climate_subset <- redcap_climate[,c("Date", "site", "temp_mean_hobo", "rainfall_
 # https://www7.ncdc.noaa.gov/CDO/cdoselect.cmd?datasetabbv=GSOD&countryabbv&georegionabbv
 kisumu_gsod <- read.delim("Kenya/Climate/GSOD_Kisumu.txt", header = TRUE, sep = ",")
 mombasa_gsod <- read.delim("Kenya/Climate/GSOD_Mombasa.txt", header = TRUE, sep = ",")
+# kisumu_gsod <- read.delim("C:/Users/Jeremy/Desktop/GSOD_Kisumu.txt", header = TRUE, sep = ",")
+# mombasa_gsod <- read.delim("C:/Users/Jeremy/Desktop/GSOD_Mombasa.txt", header = TRUE, sep = ",")
 
 # format temperature and site
 gsod.files <- list(kisumu_gsod, mombasa_gsod)
@@ -75,6 +77,17 @@ wide_data$ukunda_temp_mean_hobo <- ifelse(wide_data$ukunda_temp_mean_hobo >= 34,
 fill_uk_w_gsod <- lm(ukunda_temp_mean_hobo ~ mombasa_mean_temp_gsod, data = wide_data)
 wide_data$ukunda_Temperature <- ifelse(!is.na(wide_data$ukunda_temp_mean_hobo), wide_data$ukunda_temp_mean_hobo, round(coef(fill_uk_w_gsod)[[1]] + coef(fill_uk_w_gsod)[[2]] * wide_data$mombasa_mean_temp_gsod, 1))
 
+# fill in the few missing temperature days with the mean of the 2 days before and after date with missing data
+sites <- c("chulaimbo", "kisumu", "msambweni", "ukunda")
+
+for (j in 1:length(sites)){
+  for (k in 3:nrow(wide_data)){
+    if (is.na(wide_data[k,paste0(sites[j], "_Temperature")])){
+      wide_data[k,paste0(sites[j], "_Temperature")] <- mean(wide_data[(k-2):(k+2),paste0(sites[j], "_Temperature")], na.rm=T)
+    }  
+  }
+}  
+
 # fill in missing rainfall data -------------------------------------------------------------------
 # calculate 30 days aggregated rainfall values
 wide_data$chulaimbo_rainfall_hobo <- wide_data$chulaimbo_village_rainfall_hobo
@@ -82,29 +95,33 @@ wide_data$chulaimbo_daily_rainfall <- wide_data$chulaimbo_hospital_daily_rainfal
 sites2 <- c("chulaimbo", "obama", "msambweni", "ukunda")
 
 for (j in 1:length(sites2)){
-  wide_data[paste0("Monthly_rainfall_", sites2[j])] <- NA
-  wide_data[paste0("Monthly_rainfall_", sites2[j], "_noaa")] <- NA
-  for (k in 30:nrow(wide_data)){
-    wide_data[k,paste0("Monthly_rainfall_", sites2[j])] <- sum(wide_data[(k-29):k, paste0(sites2[j], "_rainfall_hobo")])
-    wide_data[k,paste0("Monthly_rainfall_", sites2[j], "_noaa")] <- sum(wide_data[(k-29):k, paste0(sites2[j], "_daily_rainfall")])
+  wide_data[paste0("Two_week_rainfall_", sites2[j])] <- NA
+  wide_data[paste0("Two_week_rainfall_", sites2[j], "_noaa")] <- NA
+  for (k in 14:nrow(wide_data)){
+    wide_data[k,paste0("Two_week_rainfall_", sites2[j])] <- sum(wide_data[(k-13):k, paste0(sites2[j], "_rainfall_hobo")])
+    wide_data[k,paste0("Two_week_rainfall_", sites2[j], "_noaa")] <- sum(wide_data[(k-13):k, paste0(sites2[j], "_daily_rainfall")])
   }  
 }  
 
 # Chulaimbo
-fill_ch_w_noaa <- lm(Monthly_rainfall_chulaimbo ~ Monthly_rainfall_chulaimbo_noaa, data = wide_data)
-wide_data$chulaimbo_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_chulaimbo), wide_data$Monthly_rainfall_chulaimbo, round(coef(fill_ch_w_noaa)[[1]] + coef(fill_ch_w_noaa)[[2]] * wide_data$Monthly_rainfall_chulaimbo_noaa, 1))
+fill_ch_w_noaa <- lm(Two_week_rainfall_chulaimbo ~ Two_week_rainfall_chulaimbo_noaa, data = wide_data)
+wide_data$chulaimbo_Two_week_rainfall <- ifelse(!is.na(wide_data$Two_week_rainfall_chulaimbo), wide_data$Two_week_rainfall_chulaimbo, round(coef(fill_ch_w_noaa)[[1]] + coef(fill_ch_w_noaa)[[2]] * wide_data$Two_week_rainfall_chulaimbo_noaa, 1))
+# replace values below zero with zero (due to negative coefficient value in regression)
+wide_data$chulaimbo_Two_week_rainfall <- ifelse(wide_data$chulaimbo_Two_week_rainfall < 0, 0, wide_data$chulaimbo_Two_week_rainfall)
 
 # Kisumu
-fill_ki_w_noaa <- lm(Monthly_rainfall_obama ~ Monthly_rainfall_obama_noaa, data = wide_data)
-wide_data$kisumu_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_obama), wide_data$Monthly_rainfall_obama, round(coef(fill_ki_w_noaa)[[1]] + coef(fill_ki_w_noaa)[[2]] * wide_data$Monthly_rainfall_obama_noaa, 1))
+fill_ki_w_noaa <- lm(Two_week_rainfall_obama ~ Two_week_rainfall_obama_noaa, data = wide_data)
+wide_data$kisumu_Two_week_rainfall <- ifelse(!is.na(wide_data$Two_week_rainfall_obama), wide_data$Two_week_rainfall_obama, round(coef(fill_ki_w_noaa)[[1]] + coef(fill_ki_w_noaa)[[2]] * wide_data$Two_week_rainfall_obama_noaa, 1))
+# replace values below zero with zero (due to negative coefficient value in regression)
+wide_data$kisumu_Two_week_rainfall <- ifelse(wide_data$kisumu_Two_week_rainfall < 0, 0, wide_data$kisumu_Two_week_rainfall)
 
 # Msmabweni
-fill_ms_w_noaa <- lm(Monthly_rainfall_msambweni ~ Monthly_rainfall_msambweni_noaa, data = wide_data)
-wide_data$msambweni_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_msambweni), wide_data$Monthly_rainfall_msambweni, round(coef(fill_ms_w_noaa)[[1]] + coef(fill_ms_w_noaa)[[2]] * wide_data$Monthly_rainfall_msambweni_noaa, 1))
+fill_ms_w_noaa <- lm(Two_week_rainfall_msambweni ~ Two_week_rainfall_msambweni_noaa, data = wide_data)
+wide_data$msambweni_Two_week_rainfall <- ifelse(!is.na(wide_data$Two_week_rainfall_msambweni), wide_data$Two_week_rainfall_msambweni, round(coef(fill_ms_w_noaa)[[1]] + coef(fill_ms_w_noaa)[[2]] * wide_data$Two_week_rainfall_msambweni_noaa, 1))
 
 # Ukunda
-fill_uk_w_noaa <- lm(Monthly_rainfall_ukunda ~ Monthly_rainfall_ukunda_noaa, data = wide_data)
-wide_data$ukunda_Rainfall <- ifelse(!is.na(wide_data$Monthly_rainfall_ukunda), wide_data$Monthly_rainfall_ukunda, round(coef(fill_uk_w_noaa)[[1]] + coef(fill_uk_w_noaa)[[2]] * wide_data$Monthly_rainfall_ukunda_noaa, 1))
+fill_uk_w_noaa <- lm(Two_week_rainfall_ukunda ~ Two_week_rainfall_ukunda_noaa, data = wide_data)
+wide_data$ukunda_Two_week_rainfall <- ifelse(!is.na(wide_data$Two_week_rainfall_ukunda), wide_data$Two_week_rainfall_ukunda, round(coef(fill_uk_w_noaa)[[1]] + coef(fill_uk_w_noaa)[[2]] * wide_data$Two_week_rainfall_ukunda_noaa, 1))
 
 # fill in missing humidity data -------------------------------------------------------------------
 wide_data$Month_Day <- format(wide_data$Date, "%m-%d")
@@ -121,33 +138,21 @@ wide_data$kisumu_Humidity <- ifelse(!is.na(wide_data$obama_rh_mean_hobo), wide_d
 wide_data$msambweni_Humidity <- ifelse(!is.na(wide_data$msambweni_rh_mean_hobo), wide_data$msambweni_rh_mean_hobo, wide_data$msambweni_rh_ltm)
 wide_data$ukunda_Humidity <- ifelse(!is.na(wide_data$ukunda_rh_mean_hobo), wide_data$ukunda_rh_mean_hobo, wide_data$ukunda_rh_ltm)
 
-# calculate 30 day aggregated rainfall values -----------------------------------------------------
-wide_data <- wide_data[order(wide_data$Date),]
-sites2 <- c("chulaimbo", "kisumu", "msambweni", "ukunda")
-
-for (j in 1:length(sites2)){
-  weatherdf <- wide_data[, c("Date", paste0(sites2[j], "_Temperature"), paste0(sites2[j], "_Rainfall"), paste0(sites2[j], "_Humidity"))]
-  weatherdf$Monthly_rainfall <- NA
-  weatherdf$Monthly_rainfall_weighted <- NA
-  weatherdf$Monthly_rainy_days_25 <- NA
-  for (k in 30:nrow(weatherdf)){
-    rainSub <- subset(weatherdf, Date >= Date[k] - 29 & Date <= Date[k])
-    rainSub$exDec <- 30:1
-    rainSub$exDec <- rainSub[,paste0(sites2[j], "_Rainfall")] * (1/rainSub$exDec) 
-    weatherdf$Monthly_rainfall[k] <- sum(rainSub[paste0(sites2[j], "_Rainfall")])
-    weatherdf$Monthly_rainfall_weighted[k] <- sum(rainSub$exDec)
-    weatherdf$Monthly_rainy_days_25[k] <- sum(rainSub[paste0(sites2[j], "_Rainfall")] > 2.5)
-    if (is.na(weatherdf[k,paste0(sites2[j], "_Temperature")])){
-      # fill in the few missing temperature days with the mean of the 2 days before and after date with missing data
-      weatherdf[k,paste0(sites2[j], "_Temperature")] <- mean(weatherdf[(k-2):(k+2),paste0(sites2[j], "_Temperature")], na.rm=T)
-    }  
-  }
-  colnames(weatherdf) <- gsub(paste0(sites2[j], "_"), "", colnames(weatherdf))
-  weatherdf$Site <- paste0(toupper(substr(sites2[j],1,1)), substr(sites2[j],2,nchar(sites2[j])))
-  weatherdf <- weatherdf[30:nrow(weatherdf),]
-  assign(sites2[j], weatherdf)
-}  
+# save pre-gapfilled data
+# x<-wide_data[,c("Date", "chulaimbo_village_temp_mean_hobo", "kisumu_estate_temp_mean_hobo", "kisumu_mean_temp_gsod", "msambweni_temp_mean_hobo", "ukunda_temp_mean_hobo", "mombasa_mean_temp_gsod", "Two_week_rainfall_chulaimbo", "Two_week_rainfall_chulaimbo_noaa", "Two_week_rainfall_obama", "Two_week_rainfall_obama_noaa", "Two_week_rainfall_msambweni", "Two_week_rainfall_msambweni_noaa", "Two_week_rainfall_ukunda", "Two_week_rainfall_ukunda_noaa", "chulaimbo_village_rh_mean_hobo", "obama_rh_mean_hobo", "msambweni_rh_mean_hobo", "ukunda_rh_mean_hobo")]
+# write.csv(x, "Concatenated_Data/climate_data/pregapfilled_data_Kenya.csv", row.names = F)
 
 # merge data into long format and save -----------------------------------------------------------
+wide_data <- wide_data[order(wide_data$Date),]
+
+for (j in 1:length(sites)){
+  weatherdf <- wide_data[, c("Date", paste0(sites[j], "_Temperature"), paste0(sites[j], "_Two_week_rainfall"), paste0(sites[j], "_Humidity"))]
+  colnames(weatherdf) <- gsub(paste0(sites[j], "_"), "", colnames(weatherdf))
+  weatherdf$Site <- paste0(toupper(substr(sites[j],1,1)), substr(sites[j],2,nchar(sites[j])))
+  weatherdf <- weatherdf[14:nrow(weatherdf),]
+  assign(sites[j], weatherdf)
+}  
+
 weatherdf <- do.call(rbind, list(chulaimbo, kisumu, msambweni, ukunda))
+weatherdf[,c(2:4)] <- lapply(weatherdf[,c(2:4)], function(x) round(x,2))
 write.csv(weatherdf, "Concatenated_Data/climate_data/gapfilled_climate_data_Kenya.csv", row.names = F)
