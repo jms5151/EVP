@@ -7,9 +7,16 @@ cases_ecuador <- read.csv("Concatenated_Data/case_data/cases_by_month_Ecuador.cs
 
 # format columns to combine data
 cases_kenya$denv_positive_clinically_diagnosed <- NA
+cases_kenya$chikv_positive_clinically_diagnosed <- NA
 
 # merge data
-cases <- rbind(cases_ecuador, cases_kenya, by=c("Site", "Date", "Year.Month"), all=T)
+cases <- rbind(cases_ecuador, cases_kenya)
+
+# remove year-month variable
+cases$Year.Month <- NULL
+
+# format date
+cases$Date <- as.Date(cases$Date, "%Y-%m-%d")
 
 # save data
-write.csv(cases, "Concatenated_Data/case_data/merged_case_data.csv", row.names = F)
+save(cases, file="Concatenated_Data/case_data/merged_case_data.RData", row.names = F)
