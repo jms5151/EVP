@@ -5,7 +5,7 @@ rm(list=ls()) #remove previous variable assignments
 library(plyr)
 
 # load functions
-source("C:/Users/Jamie/Box Sync/R_functions/date_from_week_number.R")
+source("C:/Users/Jeremy/Box Sync/R_functions/date_from_week_number.R")
 
 # load data
 load("Ecuador/EVP_Ecuador_Data/vector_data/h_mosq_new.RData")
@@ -13,11 +13,16 @@ load("Ecuador/EVP_Ecuador_Data/vector_data/m_mosq_new.RData")
 load("Ecuador/EVP_Ecuador_Data/vector_data/p_mosq_new.RData")
 load("Ecuador/EVP_Ecuador_Data/vector_data/z_mosq_new.RData")
 
+machala2018 <- readRDS("Ecuador/EVP_Ecuador_Data/vector_data/ent.m_2018.RData")
+huaquillas2018 <- readRDS("Ecuador/EVP_Ecuador_Data/vector_data/ent.h_2018.RData")
+portovelo2018 <- readRDS("Ecuador/EVP_Ecuador_Data/vector_data/ent.p_2018.RData")
+zaruma2018 <- readRDS("Ecuador/EVP_Ecuador_Data/vector_data/ent.z_2018.RData")
+
 # combine all data into list
-mosquitoes.ecuador <- list(hall6, mall6, pall6, zall6)
+mosquitoes.ecuador <- list(hall6, huaquillas2018, mall6, machala2018, pall6, portovelo2018, zall6, zaruma2018)
 
 # add site information; 1=h, 2=m, 3=p, 4=z
-ecuador.sites <- list(1,2,3,4) #"h", "m", "p", "z"
+ecuador.sites <- list(1,1,2,2,3,3,4,4) #"h", "m", "p", "z"
 mosquitoes.ecuador <- Map(cbind, mosquitoes.ecuador, Site = ecuador.sites)
 
 # row bind list of dataframes in single dataframe
@@ -36,11 +41,12 @@ mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==3] <- "Portovelo"
 mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==4] <- "Zaruma"
 
 # save data
-write.csv(mosquitoes.ecuador[,c("Site", "Date", "aedes_total")], "Concatenated_Data/vector_data/vector_data_Ecuador_weekly.csv", row.names = F)
+# write.csv(mosquitoes.ecuador[,c("Site", "Date", "aedes_total")], "Concatenated_Data/vector_data/vector_data_Ecuador_weekly.csv", row.names = F)
+# ggplot() + geom_point(data = mosquitoes.ecuador, aes(x = Date, y = Site))
 
 # summarize by month and year
 mosquitoes.ecuador$Year.Month <- substr(mosquitoes.ecuador$Date, 1, 7)
-mosquitoes.ecuador2 <- ddply(mosquitoes.ecuador, .(Site, Year.Month), summarize, Date = max(Date), aedes=round(sum(totA)/sum(houses))) 
+mosquitoes.ecuador2 <- ddply(mosquitoes.ecuador, .(Site, Year.Month), summarize, Date = max(Date), aedes_total=round(sum(totA)/sum(houses),5)) 
                              
 # save data
 write.csv(mosquitoes.ecuador2, "Concatenated_Data/vector_data/vector_data_Ecuador.csv", row.names = F)
