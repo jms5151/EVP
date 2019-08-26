@@ -5,7 +5,7 @@ library(redcapAPI)
 library(REDCapR)
 
 # get data -----------------------------------------------------------------
-source("C:/Users/Jamie/Box Sync/R_functions/REDCap_API_Token_Climate_Data.R")
+source("C:/Users/Jeremy/Box Sync/R_functions/REDCap_API_Token_Climate_Data.R")
 REDcap.URL  <- 'https://redcap.stanford.edu/api/'
 rcon <- redcapConnection(url=REDcap.URL, token=climate.token)
 
