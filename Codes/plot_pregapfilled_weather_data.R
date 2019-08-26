@@ -2,8 +2,8 @@
 rm(list=ls()) #remove previous variable assignments
 
 # load
-wide_data_ecuador <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Ecuador.csv", head=T)
-wide_data_kenya <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Kenya.csv", head=T)
+wide_data_ecuador <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Ecuador.csv", head=T, stringsAsFactors = F)
+wide_data_kenya <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Kenya.csv", head=T, stringsAsFactors = F)
 
 # Temperature -------------------------------------------------------------------------
 par(mfrow=c(3, 2))
@@ -45,32 +45,32 @@ abline(lm(ukunda_temp_mean_hobo~mombasa_mean_temp_gsod, data=wide_data_kenya), l
 par(mfrow=c(3, 2))
 
 # Huaquillas & Machala
-plot(wide_data_ecuador$Machala_Monthly_rainfall, wide_data_ecuador$Huaquillas_Monthly_rainfall, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,550), ylim=c(0,550), xlab=c("Machala rainfall"), ylab=c("Huaquillas rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_ecuador$Machala_Two_week_rainfall, wide_data_ecuador$Huaquillas_Two_week_rainfall, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Machala rainfall"), ylab=c("Huaquillas rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Huaquillas_Monthly_rainfall~Machala_Monthly_rainfall, data=wide_data_ecuador), lwd=2)
+abline(lm(Huaquillas_Two_week_rainfall~Machala_Two_week_rainfall, data=wide_data_ecuador), lwd=2)
 # legend("topleft", legend = c("y=x line", "Regression line"), lty = c(2,1), lwd=c(1,2), bty = "n", cex=1.2)
 
 # Portovelo & Zaruma
-plot(wide_data_ecuador$Portovelo_Monthly_rainfall, wide_data_ecuador$Zaruma_Monthly_rainfall, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,420), ylim=c(0,420), xlab=c("Portovelo rainfall"), ylab=c("Zaruma rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_ecuador$Portovelo_Two_week_rainfall, wide_data_ecuador$Zaruma_Two_week_rainfall, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,250), ylim=c(0,250), xlab=c("Portovelo rainfall"), ylab=c("Zaruma rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Zaruma_Monthly_rainfall~Portovelo_Monthly_rainfall, data=wide_data_ecuador), lwd=2)
+abline(lm(Zaruma_Two_week_rainfall~Portovelo_Two_week_rainfall, data=wide_data_ecuador), lwd=2)
 
 # Chulaimbo
-plot(wide_data_kenya$Monthly_rainfall_chulaimbo, wide_data_kenya$Monthly_rainfall_chulaimbo_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,420), ylim=c(0,420), xlab=c("Chulaimbo rainfall"), ylab=c("GSOD rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_kenya$Two_week_rainfall_chulaimbo, wide_data_kenya$Two_week_rainfall_chulaimbo_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,300), ylim=c(0,300), xlab=c("Chulaimbo rainfall"), ylab=c("ARC2 rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Monthly_rainfall_chulaimbo_noaa~Monthly_rainfall_chulaimbo, data=wide_data_kenya), lwd=2)
+abline(lm(Two_week_rainfall_chulaimbo_noaa~Two_week_rainfall_chulaimbo, data=wide_data_kenya), lwd=2)
 
 # Kisumu
-plot(wide_data_kenya$Monthly_rainfall_obama, wide_data_kenya$Monthly_rainfall_obama_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Kisumu rainfall"), ylab=c("GSOD rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_kenya$Two_week_rainfall_obama, wide_data_kenya$Two_week_rainfall_obama_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,300), ylim=c(0,300), xlab=c("Kisumu rainfall"), ylab=c("ARC2 rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Monthly_rainfall_obama_noaa~Monthly_rainfall_obama, data=wide_data_kenya), lwd=2)
+abline(lm(Two_week_rainfall_obama_noaa~Two_week_rainfall_obama, data=wide_data_kenya), lwd=2)
 
 # Msambweni
-plot(wide_data_kenya$Monthly_rainfall_msambweni, wide_data_kenya$Monthly_rainfall_msambweni_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Msambweni rainfall"), ylab=c("GSOD rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_kenya$Two_week_rainfall_msambweni, wide_data_kenya$Two_week_rainfall_msambweni_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Msambweni rainfall"), ylab=c("ARC2 rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Monthly_rainfall_msambweni_noaa~Monthly_rainfall_msambweni, data=wide_data_kenya), lwd=2)
+abline(lm(Two_week_rainfall_msambweni_noaa~Two_week_rainfall_msambweni, data=wide_data_kenya), lwd=2)
 
 # Ukunda
-plot(wide_data_kenya$Monthly_rainfall_ukunda, wide_data_kenya$Monthly_rainfall_ukunda_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Ukunda rainfall"), ylab=c("GSOD rainfall"), col=adjustcolor("black", alpha=0.5))
+plot(wide_data_kenya$Two_week_rainfall_ukunda, wide_data_kenya$Two_week_rainfall_ukunda_noaa, pch=19, cex.lab=1.2, cex.axis=1.2, xlim=c(0,400), ylim=c(0,400), xlab=c("Ukunda rainfall"), ylab=c("ARC2 rainfall"), col=adjustcolor("black", alpha=0.5))
 abline(0,1, lty=2)
-abline(lm(Monthly_rainfall_ukunda_noaa~Monthly_rainfall_ukunda, data=wide_data_kenya), lwd=2)
+abline(lm(Two_week_rainfall_ukunda_noaa~Two_week_rainfall_ukunda, data=wide_data_kenya), lwd=2)
