@@ -1,9 +1,9 @@
 # https://eriqande.github.io/rep-res-web/lectures/making-maps-with-R.html
-
 library(ggplot2)
 library(ggmap)
 library(maps)
 library(mapdata)
+library(ggrepel)
 
 source("C:/Users/Jeremy/Box Sync/R_functions/Google_maps_API_token.R")
 
@@ -17,8 +17,11 @@ kenya.sites <- data.frame(longitude = c(34.636908, 34.767957, 39.668207, 39.5661
                           , Site = c("Chulaimbo", "Kisumu", "Msambweni", "Ukunda"))
 
 # get basemaps
-ecuador <- get_googlemap(center = c(-79.6109, -2.7173), maptype = "terrain", source = "google", zoom = 8, style='feature:all|element:labels|visibility:off')
-kenya <- get_googlemap(center = c(37.9083, 0.1769), maptype = "terrain", source = "google", zoom = 6, style='feature:all|element:labels|visibility:off')
+# ecuador <- get_googlemap(center = c(-79.6109, -2.7173), maptype = "terrain", source = "google", zoom = 8, style='feature:all|element:labels|visibility:off')
+# kenya <- get_googlemap(center = c(37.9083, 0.1769), maptype = "terrain", source = "google", zoom = 6, style='feature:all|element:labels|visibility:off')
+
+ecuador <- get_googlemap(center = c(-79.6109, -2.0173), maptype = "terrain", source = "google", zoom = 7, style='feature:all|element:labels|visibility:off')
+kenya <- get_googlemap(center = c(36.9083, -2.0173), maptype = "terrain", source = "google", zoom = 7, style='feature:all|element:labels|visibility:off')
 
 # make maps
 ggmap(ecuador) +
@@ -40,14 +43,6 @@ ggmap(kenya) +
   ggtitle("B. Kenya") +
   ylab("Latitude") +
   xlab("Longitude")
-
-
-
-
-
-
-
-
 
 
 # -------------------------------------------------------------------------------------------
