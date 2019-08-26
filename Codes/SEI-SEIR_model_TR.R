@@ -112,17 +112,28 @@ K_tr_briere <- function(temp, rain, Rmax, N){
   }
   else {
     c <- 7.86e-05
-    max(carrying_capacity_t(temp,29.0,0.05, N)*c*rain*(rain-R0)*sqrt(Rmax-rain)/10 + 0.001, 1000)
+    max(carrying_capacity_t(temp,29.0,0.05, N)*c*rain*(rain-R0)*sqrt(Rmax-rain)*0.3 + 0.001, 1000)
   }
 }
 
 K_tr_quadratic <- function(temp, rain, Rmax, N){
-  R0 <- 0
+  R0 <- 1
   if((rain < R0) | (rain > Rmax)){
     max(0.01*carrying_capacity_t(temp, 29.0, 0.05, N), 1000)
   }
   else {
     c <- -5.99e-03
-    max(carrying_capacity_t(temp, 29.0, 0.05, N)*(c*(rain-R0)*(rain-Rmax))/abs((c*(Rmax/2-R0)*(Rmax/2-Rmax)))*10 + 0.001, 1000)
+    max(carrying_capacity_t(temp, 29.0, 0.05, N)*(c*(rain-R0)*(rain-Rmax))/2 + 0.001, 1000)
   }
+}
+
+K_tr_poly <- function(temp, rain, Rmax, N){
+  max(carrying_capacity_t(temp, 29.0, 0.05, N)*(1.126 + 9.094e-03*rain + -5.933e-04*rain^2 + 5.951e-06*rain^3 + -1.892e-08*rain^4), 1000)
+}
+
+K_tr_inverse <- function(temp, rain, Rmax, N){
+  if (rain < 1){
+    rain <- 1
+  } 
+  max(carrying_capacity_t(temp,29.0,0.05, N)*(1/rain)*1.15, 1000)
 }
