@@ -5,13 +5,13 @@ rm(list=ls()) #remove previous variable assignments
 library(deSolve)
 
 # load data 
-source("Codes/SEI-SEIR_model_TRH.R")
-source("Codes/SEI-SEIR_simulation_setup.R")
+source("SEI-SEIR_model_TRH.R")
+source("SEI-SEIR_simulation_setup.R")
 
 # run simulations
 traitDF <- data.frame(matrix(ncol = 10, nrow = 0))
 colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "Site")
-traitFileName <- "Concatenated_Data/model_simulations/SEI-SEIR_simulations_TRH_final_model.csv"
+traitFileName <- "SEI-SEIR_simulations_TRH_final_model.csv"
 write.csv(traitDF, traitFileName, row.names = F)
 
 for (l in 1:length(sites)){
@@ -22,12 +22,10 @@ for (l in 1:length(sites)){
   rain <- climateData2$Two_week_rainfall
   Rmax <- 123
   if (unique(climateData2$country) == "Ecuador"){
-    # K_trh <- K_trh_right_skewed
     K_trh <- K_trh_quadratic
   } else {
     K_trh <- K_trh_briere
   }
-  # hum <- climateData2$Humidity
   hum <- climateData2$SVPD
   Date <- climateData2$Date
   H0 <- population[l]

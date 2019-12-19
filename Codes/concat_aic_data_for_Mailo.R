@@ -1,7 +1,7 @@
 rm(list=ls()) #remove previous variable assignments
 
 # source redcap data -------------------------------------------------------
-source("Codes/REDCap_extract_case_data.R")
+source("Codes/REDCap_import_case_data.R")
 
 # subset aic cohort  
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2) #F and M are AIC, 0 C and D are other

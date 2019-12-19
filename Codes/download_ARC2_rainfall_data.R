@@ -14,7 +14,7 @@ if (!file.exists(subDir)){
 }
 
 # download data
-for (i in 833:length(links)){ 
+for (i in 1:length(links)){ 
   ARC2.file <- links[i] 
   ARC2.URL <- paste0("ftp://ftp.cpc.ncep.noaa.gov/fews/fewsdata/africa/arc2/geotiff/", ARC2.file)
   ARC2.directory <- paste0("Kenya_historical/Kenya_ARC2_zips/", ARC2.file)

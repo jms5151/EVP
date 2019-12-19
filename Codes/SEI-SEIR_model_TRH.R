@@ -1,7 +1,7 @@
 # Temperature, humidity, and rainfall dependent SEI-SEIR model
 seiseir_model_thr <- function(t, state, parameters) {
   with(as.list(c(state,parameters)), {
-    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_trh(temp[t], hum[t], rain[t], Rmax, (S+E+I+R)))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
+    dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], hum[t], rain[t], Rmax, (S+E+I+R)))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
     dM2 <- (a(temp[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t]))*M2
     dM3 <- PDR(temp[t])*M2-mu_th(temp[t], hum[t])*M3
     dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
@@ -71,15 +71,6 @@ mu_th <- function(temp, hum){
     inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(1.2248 + 0.2673*hum))*0.01
   }
 }
-# 
-# 
-# mu_th_linear <- function(temp, hum){
-#   inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1-(0.643*(hum/100)))*0.05
-# }
-# 
-# mu_th_sigmoidal <- function(temp, hum){
-#   inverted_quadratic(temp,-1.48e-01, 9.16, 37.73)+(1.01-(0.7/(1+exp(-hum + 55))))*0.05
-# }
 
 # parasite development rate
 PDR <- function(temp){
@@ -99,39 +90,32 @@ carrying_capacity_th <- function(temp, T0, EA, N, h0){
 }
 
 # carrying capacity with temperature, humidity, and rainfall
-# K_trh <- function(temp, hum, rain, N){
-#   max(carrying_capacity_th(temp, 29.0, 0.05, N, hum)*(1.126 + 9.094e-03*rain + -5.933e-04*rain^2 + 5.951e-06*rain^3 + -1.892e-08*rain^4), 1000)
-# }
-
-K_trh_right_skewed <- function(temp, h0, rain, Rmax, N){
+K_thr_briere <- function(temp, rain, Rmax, N){
   R0 <- 1
   if((rain < R0) | (rain > Rmax)){
-    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
-  }
-  else {
-    c <- 7.86e-10
-    max(carrying_capacity_th(temp,29.0,0.05, N, h0)*c*rain*(rain-R0)*exp((Rmax-rain)/15)/100000 + 0.001, 1000)
-  }
-}
-
-K_trh_quadratic <- function(temp, h0, rain, Rmax, N){
-  R0 <- 1
-  if((rain < R0) | (rain > Rmax)){
-    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
-  }
-  else {
-    c <- -5.99e-03
-    max(carrying_capacity_th(temp, 29.0, 0.05, N, 6)*(c*(rain-R0)*(rain-Rmax))/2 + 0.001, 1000)
-  }
-}
-
-K_trh_briere <- function(temp, h0, rain, Rmax, N){
-  R0 <- 1
-  if((rain < R0) | (rain > Rmax)){
-    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, h0), 1000)
+    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, 100), 1000)
   }
   else {
     c <- 7.86e-05
-    max(carrying_capacity_th(temp,29.0,0.05, N, 6)*c*rain*(rain-R0)*sqrt(Rmax-rain)*0.3 + 0.001, 1000)
+    max(carrying_capacity_th(temp, 29.0, 0.05, N, 100)*c*rain*(rain-R0)*sqrt(Rmax-rain)*0.268 + 0.001, 1000)
   }
 }
+
+K_thr_quadratic <- function(temp, rain, Rmax, N){
+  R0 <- 1
+  if((rain < R0) | (rain > Rmax)){
+    max(0.01*carrying_capacity_th(temp, 29.0, 0.05, N, 100), 1000)
+  }
+  else {
+    c <- -5.99e-03
+    max(carrying_capacity_th(temp, 29.0, 0.05, N, 100)*(c*(rain-R0)*(rain-Rmax))*0.045 + 0.001, 1000)
+  }
+}
+
+K_thr_inverse <- function(temp, rain, Rmax, N){
+  if (rain < 1){
+    rain <- 1
+  } 
+  max(carrying_capacity_th(temp,29.0,0.05, N, 100)*(1/rain), 1000)
+}
+

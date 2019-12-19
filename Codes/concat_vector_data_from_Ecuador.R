@@ -46,7 +46,12 @@ mosquitoes.ecuador$Site[mosquitoes.ecuador$Site==4] <- "Zaruma"
 
 # summarize by month and year
 mosquitoes.ecuador$Year.Month <- substr(mosquitoes.ecuador$Date, 1, 7)
-mosquitoes.ecuador2 <- ddply(mosquitoes.ecuador, .(Site, Year.Month), summarize, Date = max(Date), aedes_total=round(sum(totA)/sum(houses),5)) 
-                             
+mosquitoes.ecuador2 <- ddply(mosquitoes.ecuador, .(Site, Year.Month), summarize, Date = max(Date), aedes_total=round(sum(totA)/sum(houses),5),
+                             minA = min(totA/houses), maxA = max(totA/houses)) 
+library(ggplot2)
+ggplot(data = mosquitoes.ecuador2, aes(x = Date, y = aedes_total)) + geom_line() + facet_wrap(~Site) + geom_ribbon(aes(ymin=minA, ymax=maxA))
+
+# y<-ddply(mosquitoes.ecuador2, .(Site), summarize, amin = min(aedes_total), amax=max(aedes_total))
+
 # save data
 write.csv(mosquitoes.ecuador2, "Concatenated_Data/vector_data/vector_data_Ecuador.csv", row.names = F)

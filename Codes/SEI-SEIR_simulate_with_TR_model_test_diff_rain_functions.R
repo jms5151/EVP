@@ -5,17 +5,17 @@ rm(list=ls()) #remove previous variable assignments
 library(deSolve)
 
 # load data 
-source("Codes/SEI-SEIR_model_TR.R")
-source("Codes/SEI-SEIR_simulation_setup.R")
+source("SEI-SEIR_model_TR.R")
+source("SEI-SEIR_simulation_setup.R")
 
 # run simulations
 traitDF <- data.frame(matrix(ncol = 11, nrow = 0))
 colnames(traitDF) <- c("time", "M1", "M2", "M3", "S", "E", "I", "R", "Date", "Site", "Rain_function")
-traitFileName <- "Concatenated_Data/model_simulations/SEI-SEIR_simulations_TR_test_diff_rain_functions.csv"
+traitFileName <- "SEI-SEIR_simulations_TR_test_diff_rain_functions.csv"
 write.csv(traitDF, traitFileName, row.names = F)
 
-rfunctions_names <- c("Briere", "Inverse", "Quadratic", "Polynomial", "Right_skewed")
-rfunctions <- list(K_tr_briere, K_tr_inverse, K_tr_quadratic, K_tr_poly, K_tr_right_skewed)
+rfunctions_names <- c("Briere", "Quadratic", "Inverse")
+rfunctions <- list(K_tr_briere, K_tr_quadratic, K_tr_inverse)
 
 for (i in 1:length(sites)){
   climateData2 <- subset(climateData, Site == sites[i])
