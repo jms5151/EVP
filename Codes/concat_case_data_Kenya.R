@@ -14,11 +14,6 @@ R01_lab_results <- R01_lab_results[which(R01_lab_results$redcap_event_name!="vis
 R01_lab_results$id_cohort<-substr(R01_lab_results$person_id, 2, 2) #F and M are AIC, 0 C and D are other
 R01_lab_results <- within(R01_lab_results, id_cohort[R01_lab_results$id_cohort=="M"] <- "F")
 
-# combine cohort data 
-# R01_lab_results$sex <- ifelse(!is.na(R01_lab_results$gender_aic), R01_lab_results$gender_aic, R01_lab_results$gender) # 0=Male, 1=Female
-# R01_lab_results$school <- ifelse(!is.na(R01_lab_results$occupation_aic), R01_lab_results$occupation_aic, R01_lab_results$occupation)
-# R01_lab_results$home_village <- ifelse(!is.na(R01_lab_results$village_aic), R01_lab_results$village_aic, R01_lab_results$village)
-
 # Create a new variable by studyID for study site
 R01_lab_results$id_city <- substr(R01_lab_results$person_id, 1, 1) #C is Chulaimbo, K is Kisumu, M is Msambweni, U is Ukunda, one 0 not sure, R is also Chulaimbo, G stands for Nganja (one of the subparts of Msambweni), L is for Mililani (part of Msambweni)
 R01_lab_results$Site <- NA
@@ -36,30 +31,11 @@ R01_lab_results$int_date <- ifelse(!is.na(R01_lab_results$interview_date_aic)==T
 R01_lab_results$int_date <- ifelse(R01_lab_results$int_date == "1900-01-01", NA, R01_lab_results$int_date)
 R01_lab_results$int_date <- as.Date(R01_lab_results$int_date, "%Y-%m-%d")
 
-# fever -------------------------------------------------------------------
-# R01_lab_results$temp[R01_lab_results$temp == 385] <- 38.5
-# R01_lab_results$fever_by_temp <- ifelse(R01_lab_results$temp >=38.0 & R01_lab_results$temp < 43, 1, 0)
-# R01_lab_results$Symptoms_all_cohorts <- paste0(R01_lab_results$symptoms_aic, R01_lab_results$symptoms_aic)
-# R01_lab_results$Symptoms_all_cohorts<-tolower(R01_lab_results$Symptoms_all_cohorts)
-# R01_lab_results$fever_by_symptoms<-grepl("fever", R01_lab_results$Symptoms_all_cohorts)
-# R01_lab_results$fever_by_symptoms <- ifelse(R01_lab_results$fever_by_symptoms==TRUE, 1, 0)
-# R01_lab_results$fever <- R01_lab_results$fever_by_temp + R01_lab_results$fever_by_symptoms
-# R01_lab_results$fever <- ifelse(R01_lab_results$fever>=1,1,0)
-
 # age ---------------------------------------------------------------------
 R01_lab_results$age = R01_lab_results$age_calc_rc  # your new merged column starts with age_calc_rc
 R01_lab_results$age[!is.na(R01_lab_results$aic_calculated_age)] = R01_lab_results$aic_calculated_age[!is.na(R01_lab_results$aic_calculated_age)]  # merge with aic_calculated_age
 R01_lab_results$age[!is.na(R01_lab_results$age_calc)] = R01_lab_results$age_calc[!is.na(R01_lab_results$age_calc)]  # merge with age_calc
 R01_lab_results$age<-round(R01_lab_results$age)
-
-# age group
-# R01_lab_results$age_group<-NA
-# R01_lab_results <- within(R01_lab_results, age_group[age<=2] <- "under 2")
-# R01_lab_results <- within(R01_lab_results, age_group[age>2 & age<=5] <- "2-5")
-# R01_lab_results <- within(R01_lab_results, age_group[age>5 & age<=10] <- "6-10")
-# R01_lab_results <- within(R01_lab_results, age_group[age>10 & age<=15] <- "11-15")
-# R01_lab_results <- within(R01_lab_results, age_group[age>15] <- "over 15")
-# R01_lab_results$age_group <- factor(R01_lab_results$age_group, levels = c("under 2", "2-5", "6-10", "11-15", "over 15"))
 
 # reshape testing vars -----------------------------------------------------------------
 tested<-R01_lab_results[, grepl("person_id|redcap_event|tested_", names(R01_lab_results))]
@@ -160,29 +136,7 @@ casedata <- R01_lab_results[,c("id_cohort", "person_id", "Site", "redcap_event_n
                                , "date_symptom_onset", "infected_denv_stfd", "infected_chikv_stfd")]
 
 # subset by cohort ---------------------------------------------------------
-hcc <- subset(casedata, id_cohort == "C")
 aic <- subset(casedata, id_cohort == "F")
-
-# write.csv(hcc, "Kenya/Concatenated_Data/hcc_results.csv", row.names = F)
-# maxInf <- ddply(hcc, .(Site, person_id), summarize, denv = max(infected_denv_stfd, na.rm=T), chikv = max(infected_chikv_stfd, na.rm=T))
-# hcc.prev <- ddply(maxInf, .(Site), summarize, denvPrev = sum(denv==1)/length(denv), chikvPrev = sum(chikv==1)/length(chikv))
-# table(maxInf$denv)
-# table(maxInf$chikv)
-
-# exposure and infectious periods for aic ----------------------------------
-# all aic kids are febrile so if days with symptoms is na replace with zero as they had fever on day of visit 
-#check dates!
-# aic$date_symptom_onset[is.na(aic$date_symptom_onset)] <- 0
-
-# if kids had fever for more than 7 days treat as day 0
-# aic$date_symptom_onset[aic$date_symptom_onset > 7] <- 0
-
-# exposure and infection start and end dates
-# aic$date_start_infectious <- (aic$int_date - aic$date_symptom_onset)
-# aic$date_end_infectious <- aic$date_start_infectious + 4
-# aic$date_start_exposed <- aic$date_start_infectious - 7
-# aic$date_end_exposed <- aic$date_start_infectious - 1
-# write.csv(aic, "Kenya/Concatenated_Data/aic_results.csv", row.names = F)
 
 # aggregate aic data -------------------------------------------------------
 aic$Year.Month <- format(aic$int_date, "%Y-%m")
