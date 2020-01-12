@@ -1,4 +1,6 @@
 # Concatenate vector data from Kenya field sites ---------------------------------------
+rm(list=ls()) #remove previous variable assignments
+
 # load data
 source("Codes/REDCap_import_vector_data.R")
 
@@ -101,7 +103,7 @@ prokopack <- ddply(prokopack, .(Site, Year.Month)
             , Date = max(date_prokopack))
 
 # save data
-write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack2.csv", row.names = F)
+write.csv(prokopack, "Concatenated_Data/vector_data/Kenya_prokopack.csv", row.names = F)
 
 # library(ggplot2)
 # ggplot() + geom_point(data = larvae, aes(x = Year.Month, y = Site))

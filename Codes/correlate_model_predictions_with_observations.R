@@ -56,6 +56,8 @@ mean(as.numeric(corr_dengue$Dengue_corr))
 
 # other mosquito life stages -----------------------------------------------------------------
 merged_data_vectors <- merge(rmodels, vectors, by=c("Site", "Date"))
+
+# overall mean
 vectors <- data.frame(matrix(ncol=6, nrow=0))
 colnames(vectors) <- c("Site", "Rain_function", "Pupae", "Late_instars", "Early_instars", "Eggs")
 
@@ -75,7 +77,7 @@ write.csv(vectors, "Concatenated_Data/model_assessment/correlation_rainfall_func
 load("Concatenated_Data/CDC_Zika_El_Oro_Total.RData")
 cdcZika2$Site <- "Machala"
 cases2 <- merge(cases, cdcZika2, by=c("Site", "Date"), all=T)
-cases3 <- cases2[,c("denv_positive", "chikv_positive", "confirmed_cases_Zika")] #"chikv_positive_clinically_diagnosed", 
+cases3 <- cases2[,c("denv_positive", "chikv_positive", "confirmed_cases_Zika")] 
 cases3$arboviruses <- rowSums(cases3, na.rm=T)
 cases3$Date <- cases2$Date
 cases3$Site <- cases2$Site

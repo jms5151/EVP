@@ -20,7 +20,7 @@ library(openxlsx)
 library(reshape2)
 
 # load functions
-source("C:/Users/Jamie/Box Sync/R_functions/date_from_week_number.R")
+source("C:/Users/Jeremy/Box Sync/R_functions/date_from_week_number.R")
 
 # Clinically-diagnosed dengue data from Ecuador 2003-2011 -----------------------------------------
 # load data
@@ -77,11 +77,11 @@ noWSList <- SheetList[grep("noWS", sheets)]
 withWSList <- SheetList[grep("withWS", sheets)]
 
 # cancatenated unconfirmed and confirmed dengue data into separate dataframes
-unconfirmed1418 <- do.call(rbind, lapply(noWSList, subset, select=c("AÃ±o", "Semana", "Canton", "Total")))
+unconfirmed1418 <- do.call(rbind, lapply(noWSList, subset, select=c("Año", "Semana", "Canton", "Total")))
 confirmed1418 <- do.call(rbind, lapply(withWSList, subset, select=c("Fec.atencion", "Canton.Domic")))
 
 # format dates
-unconfirmed1418$Date <- calculate_end_of_week(unconfirmed1418$Semana, unconfirmed1418$AÃ±o)
+unconfirmed1418$Date <- calculate_end_of_week(unconfirmed1418$Semana, unconfirmed1418$Año)
 confirmed1418$Date <- convertToDate(confirmed1418$Fec.atencion, origin = "1900-01-01")
 
 # summarize by date
@@ -174,9 +174,6 @@ cases <- ddply(cases, .(Site, Year.Month), summarize
                , chikv_positive_clinically_diagnosed = ifelse(all(is.na(chikv_positive_clinically_diagnosed))==TRUE, NA, sum(chikv_positive_clinically_diagnosed, na.rm=T))
                , Date = max(Date))
 
-# save data
-write.csv(cases, "Concatenated_Data/case_data/cases_by_month_Ecuador.csv", row.names = F)
-
 # Zika data --------------------------------------------------------------------------------------------------
 # could consider using: https://github.com/cdcepi/zika/tree/master/Ecuador/GACETA-ZIKA/data
 zikv1618 <- read.csv("Ecuador/Case_data/ZIKV_El_Oro_cohort_cities_2016-2018.csv", head=T, stringsAsFactors = F)
@@ -200,3 +197,9 @@ zikv1618$Site <- paste0(toupper(substr(zikv1618$Site, 1, 1)), tolower(substr(zik
 
 # save
 write.csv(zikv1618, "Concatenated_Data/case_data/Zika.csv", row.names = F)
+
+# merge with dengue and chikungunya data --------------------------------------------------- 
+cases2 <- merge(cases, zikv1618[,c("Site", "Year.Month", "zikv_positive")], by=c("Site", "Year.Month"), all=T)
+
+# save data
+write.csv(cases2, "Concatenated_Data/case_data/cases_by_month_Ecuador.csv", row.names = F)

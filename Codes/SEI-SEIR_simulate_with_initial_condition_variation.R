@@ -6,7 +6,7 @@ library(dplyr)
 library(deSolve)
 
 # load model 
-source("Codes/SEI-SEIR_model_TRH.R")
+source("Codes/SEI-SEIR_model_THR.R")
 
 # load data 
 source("Codes/SEI-SEIR_simulation_setup.R")
@@ -23,6 +23,7 @@ for (l in 1:length(sites)){
   climateData2 <- climateData2[order(climateData2$Date),]
   climateData2 <- climateData2[complete.cases(climateData2),]
   temp <- climateData2$Temperature
+  hum <- climateData2$SVPD
   rain <- climateData2$Two_week_rainfall
   Rmax <- 123
   if (unique(climateData2$country) == "Ecuador"){
@@ -30,15 +31,14 @@ for (l in 1:length(sites)){
   } else {
     K_trh <- K_trh_briere
   }
-  hum <- climateData2$SVPD
   Date <- climateData2$Date
   H0 <- population[l]
   city <- sites[l]
   BR <- BRs[l]
   DR <- DRs[l]
   times <- seq(1,length(Date), by=1)
-  M0 <- K_trh(temp[1], hum[1], mean(rain), Rmax, H0)
-  parameters <- c(EFD, pEA, MDR, K_trh, a, pMI, mu_th, PDR, b, timestep=timestep)
+  M0 <- K_thr(temp[1], mean(rain), Rmax, H0, timestep)
+  parameters <- c(EFD, pEA, MDR, K_thr, a, pMI, mu_th, PDR, b, timestep=timestep)
   for (k in 1:nrow(init.cond)){
     state <- c(M1 = init.cond$m1[k]*M0, M2 = init.cond$m2[k]*M0, M3 = init.cond$m3[k]*M0, S = init.cond$s[k]*H0, E = init.cond$e[k]*H0, I = init.cond$i[k]*H0, R = init.cond$r[k]*H0)
     out <- ode(y = state, times = times, func = seiseir_model_thr, parms = parameters, method="rk4", atol = 1e-14, rtol = 1e-14, hini = timestep)
@@ -62,18 +62,25 @@ write.csv(initSDDF, fileName2, row.names=F)
 for (j in 1:length(sites)){
   for (k in 1:length(startDate)){
     climateData2 <- subset(climateData, Date >= startDate[k])
-    t_colName <- paste0("GF_", sites[j], "_mean_temp")
-    temp <- climateData2[,t_colName]
-    h_colName <- paste0("GF_", sites[j], "_humidity")
-    hum <- climateData2[,h_colName]
-    r_colName <- paste0("GF_", sites[j], "_cumRain")
-    rain <- climateData2[,r_colName]
-    M0 <- K_thr(temp[1], hum[1], rain[1]) # this will change with model!
+    climateData2 <- climateData2[order(climateData2$Date),]
+    climateData2 <- climateData2[complete.cases(climateData2),]
+    temp <- climateData2$Temperature
+    hum <- climateData2$SVPD
+    rain <- climateData2$Two_week_rainfall
+    Rmax <- 123
+    if (unique(climateData2$country) == "Ecuador"){
+      K_trh <- K_trh_quadratic
+    } else {
+      K_trh <- K_trh_briere
+    }
     Date <- climateData2$Date
-    H0 <- population[j]
-    city <- sites[j]
+    H0 <- population[l]
+    city <- sites[l]
+    BR <- BRs[l]
+    DR <- DRs[l]
     times <- seq(1,length(Date), by=1)
-    parameters <- c(EFD, pEA, MDR, K_thr, a, pMI, mu_th, PDR, b, timestep=timestep) # this will change with model
+    M0 <- K_thr(temp[1], mean(rain), Rmax, H0, timestep)
+    parameters <- c(EFD, pEA, MDR, K_thr, a, pMI, mu_th, PDR, b, timestep=timestep)
     state <- c(M1 = startIC$m1*M0, M2 = startIC$m2*M0, M3 = startIC$m3*M0, S = startIC$s*H0, E = startIC$e*H0, I = startIC$i*H0, R = startIC$r*H0)
     out <- ode(y = state, times = times, func = seiseir_model_thr, parms = parameters, method="rk4", atol = 1e-14, rtol = 1e-14, hini = timestep)
     out2 <- as.data.frame(out)

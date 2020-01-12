@@ -11,11 +11,15 @@ load("Concatenated_Data/climate_data/merged_climate_data.RData")
 # order sites for plotting 
 climateData$Site <- factor(climateData$Site, levels=c("Chulaimbo", "Huaquillas", "Kisumu", "Machala", "Msambweni", "Portovelo", "Ukunda", "Zaruma"))
 
+# subset climate data
+climateData <- subset(climateData, Date > "2014-06-14")
+
 # plot weather variables across sites ------------------------------------------------
-ggplot(data=climateData, aes(x=Date, y = Temperature, group=Site)) + geom_line() + facet_wrap(~Site, scales="free_x", ncol=2) + theme_bw() + ylab("Temperature (C)")
-ggplot(data=climateData, aes(x=Date, y = Two_week_rainfall, group=Site)) + geom_line() + facet_wrap(~Site, scales='free_x', ncol=2) + theme_bw() + ylab("Rainfall (mm)") 
-ggplot(data=climateData, aes(x=Date, y = Humidity, group=Site)) + geom_line() + facet_wrap(~Site, scales='free_x', ncol=2) + theme_bw() + ylab("Relative humidity (%)")
-ggplot(data=climateData, aes(x=Date, y = SVPD, group=Site)) + geom_line() + facet_wrap(~Site, scales='free_x', ncol=2) + theme_bw() + ylab("Saturation vapor pressure deficit (kPA)")
+ggplot(data=climateData, aes(x=Date, y = Temperature, group=Site)) + geom_line() + facet_wrap(~Site, ncol=2) + theme_bw() + ylab("Temperature (C)")
+ggplot(data=climateData, aes(x=Date, y = Two_week_rainfall, group=Site)) + geom_line() + facet_wrap(~Site, ncol=2) + theme_bw() + ylab("Two-week cumulative rainfall (mm)") 
+# ggplot(data=climateData, aes(x=Date, y = Humidity, group=Site)) + geom_line() + facet_wrap(~Site, ncol=2) + theme_bw() + ylab("Relative humidity (%)")
+ggplot(data=climateData, aes(x=Date, y = SVPD, group=Site)) + geom_line() + facet_wrap(~Site, ncol=2) + theme_bw() + ylab("Saturation vapor pressure deficit (kPA)")
+# width = 770, height = 610
 
 # reorder sites for plotting 
 climateData$Site <- factor(climateData$Site, levels=c("Zaruma", "Portovelo", "Machala", "Huaquillas", "Ukunda", "Msambweni", "Kisumu", "Chulaimbo"))

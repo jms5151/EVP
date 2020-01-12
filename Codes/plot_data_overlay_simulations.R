@@ -22,10 +22,67 @@ tv_ci <- tv %>%
             mozzies_high95 = quantile(M1+M2+M3, 0.975)) 
 
 # load case data
-load("Concatenated_Data/case_data/merged_case_data.RData")
+# load("Concatenated_Data/case_data/merged_case_data.RData")
 
 # load vector data
-load("Concatenated_Data/vector_data/merged_vector_data.RData")
+# load("Concatenated_Data/vector_data/merged_vector_data.RData")
+
+# load data
+load("Concatenated_Data/model_v_data_cases.RData")
+load("Concatenated_Data/model_v_data_aedes.RData")
+
+# load best model info
+dengue_mods <- read.csv("Concatenated_Data/model_assessment/correlation_best_mod_dengue.csv", head=T, stringsAsFactors=F)
+aedes_mods <- read.csv("Concatenated_Data/model_assessment/correlation_best_mod_aedes.csv", head=T, stringsAsFactors=F)
+
+# test function
+source("C:/Users/Jeremy/Box Sync/R_functions/mtexti.R")
+
+# plot dengue cases
+par(mfrow=c(4,2))
+
+for (i in 1:8){ 
+  mod2 <- subset(cases_and_mods, Rain_function == dengue_mods$Rain_function[i] & Site == dengue_mods$Site[i] & time > 90)
+  mod2mod <- subset(mod2, !is.na(denv_positive))
+  par(mar = c(4,4,2,4))
+  with(mod2mod, plot(Date, I, type='l', cex=1.2, lwd=2, ylab='', xlab='', yaxt='n'))
+  axis(side = 2, las=2)
+  title(dengue_mods$Site[i], adj=0)
+  par(new=T)
+  with(mod2mod, plot(Date, denv_positive, axes=FALSE, ylab='', xlab='', type='o', pch=21, cex=1.2, lwd=2, col='darkblue', bg='lightblue'))
+  axis(side = 4, las=2)
+  # mtexti(side = 4, line = 3, 'Lab-confirmed cases')
+  # legend("topright", legend=c('Predicted cases', "Observed cases")
+  #        , pch=c(NA, 21), lty=c(1,1), lwd=c(2,2), bg=c(NA, 'lightblue')
+  #        , col=c('black', 'darkblue'), text.col=c('black', 'darkblue')
+  #        , bty = "n", cex=1.2)
+  legend("topleft", legend=c(paste0("N=", nrow(mod2mod)), paste0("r=", dengue_mods$Dengue_corr[i]), paste0("Rain function=", dengue_mods$Rain_function[i])), bty='n', cex=1.2)
+}
+
+# plot mosquitoes
+par(mfrow=c(4,2))
+
+for (i in 1:8){ 
+  mod2 <- subset(vectors_and_mods, Rain_function == aedes_mods$Rain_function[i] & Site == aedes_mods$Site[i] & time > 90)
+  mod2mod <- subset(mod2, !is.na(aedes_total))
+  par(mar = c(4,4,2,4))
+  with(mod2mod, plot(Date, Mtot, type='l', cex=1.2, lwd=2, ylab='', xlab='', yaxt='n'))
+  axis(side = 2, las=2)
+  title(aedes_mods$Site[i], adj=0)
+  par(new=T)
+  with(mod2mod, plot(Date, aedes_total, axes=FALSE, ylab='', xlab='', type='o', pch=21, cex=1.2, lwd=2, col='darkblue', bg='lightblue'))
+  axis(side = 4, las=2)
+  if (i == 1){
+    # mtexti(side = 4, line = 3, 'Lab-confirmed cases')
+    legend("topright", legend=c('Predicted cases', "Observed cases")
+           , pch=c(NA, 21), lty=c(1,1), lwd=c(2,2), bg=c(NA, 'lightblue')
+           , col=c('black', 'darkblue'), text.col=c('black', 'darkblue')
+           , bty = "n", cex=1.2)
+  }
+  legend("topleft", legend=c(paste0("N=", nrow(mod2mod)), paste0("r=", aedes_mods$Aedes_corr[i]), paste0("Rain function=", aedes_mods$Rain_function[i])), bty='n', cex=1.2)
+}
+
+
 
 # load final model for averaging
 # models <- read.csv("Concatenated_Data/model_simulations/SEI-SEIR_simulations_TRH_final_model.csv", head=T, stringsAsFactors = F)

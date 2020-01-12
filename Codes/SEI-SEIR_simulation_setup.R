@@ -3,14 +3,14 @@
 library(deSolve)
 
 # load climate data
-load("merged_climate_data.RData")
+load("Concatenated_Data/climate_data/merged_climate_data.RData")
 
 # load and set initial conditions
-init.cond <- read.csv("LHS_inputs.csv", head=T)
+init.cond <- read.csv("Concatenated_Data/sensitivity_analyses/LHS_inputs.csv", head=T)
 startIC <- subset(init.cond, IC == "18")
 
 # load traits
-trait_posterior <- read.csv("Random_sample_of_posterior_traits.csv", head=T)
+trait_posterior <- read.csv("Concatenated_Data/sensitivity_analyses/Random_sample_of_posterior_traits.csv", head=T)
 
 # set immigration and emmigration rate
 ie <- 0.01

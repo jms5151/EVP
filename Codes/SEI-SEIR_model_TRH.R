@@ -4,8 +4,8 @@ seiseir_model_thr <- function(t, state, parameters) {
     dM1 <- (EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t])^(-1))*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], hum[t], rain[t], Rmax, (S+E+I+R)))),0)-(a(temp[t])*pMI(temp[t])*I/(S+E+I+R)+mu_th(temp[t], hum[t])*M1)
     dM2 <- (a(temp[t])*pMI(temp[t])*I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t]))*M2
     dM3 <- PDR(temp[t])*M2-mu_th(temp[t], hum[t])*M3
-    dS <- -a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
-    dE <- a(temp[t])*b(temp[t])*(M3/(M1+M2+M3+0.001))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
+    dS <- -a(temp[t])*b(temp[t])*(M3/(S+E+I+R))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
+    dE <- a(temp[t])*b(temp[t])*(M3/(S+E+I+R))*S-(1.0/5.9)*E - DR*(E/1000)/360 - ie*E
     dI <- (1.0/5.9)*E-(1.0/5.0)*I - DR*(I/1000)/360 - ie*I
     dR <- (1.0/5.0)*I - DR*(R/1000)/360 - ie*R
     list(c(dM1, dM2, dM3, dS, dE, dI, dR))

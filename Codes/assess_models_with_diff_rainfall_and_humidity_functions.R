@@ -15,7 +15,7 @@ load("Concatenated_Data/vector_data/merged_vector_data.RData")
 data <- merge(cases, vectors, by=c("Site", "Date", "country"), all=T)
 
 # load modeled data with different rainfall functions
-models <- read.csv("Concatenated_Data/model_simulations/SEI-SEIR_simulations_THR_diff_rain_and_hum_functions.csv", head=T, stringsAsFactors = F)
+models <- read.csv("Concatenated_Data/model_simulations/SEI-SEIR_simulations_THR_test_diff_rain_functions.csv", head=T, stringsAsFactors = F)
 models$Mtot <- models$M1 + models$M2 + models$M3
 models$country <- ifelse(models$Site=="Chulaimbo"|models$Site=="Kisumu"|models$Site=="Msambweni"|models$Site=="Ukunda", "Kenya", "Ecuador")
 models$model <- paste0(models$Rain_metric, "_", models$Rain_function, "-", models$Humidity_function)
@@ -94,7 +94,7 @@ for (Reg in regions){
     ggsave(fname)
   }
 }
-# ggplot(models, aes(x=Date, y=I)) + facet_grid(~Site, scales='free') +
-#   geom_line(aes(colour=model)) + theme(legend.position = 'none')# + # colour, group both depend on cond2
-#   geom_point(aes(colour=cond2),               # colour depends on cond2
-#              size=3)
+
+
+# add one legend indicating observations vs predictions
+# add legend to each plot for number of model used, num data points, and correlation

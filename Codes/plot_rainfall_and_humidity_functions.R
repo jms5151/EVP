@@ -1,8 +1,7 @@
-# plot rainfall and humidity functions --------------------------------------------
+# plot rainfall and humidity (SVPD) functions ----------------------------------------------
 rm(list=ls()) #remove previous variable assignments
 
-# rainfall ------------------------------------------------------------------------
-source("C:/Users/Jamie/Box Sync/SEI-SEIR_Arboviruses/SEI-SEIR_model_TRH.R")
+source("C:/Users/Jeremy/Box Sync/DENV/Codes/SEI-SEIR_model_THR.R")
 
 BR <- c()
 QD <- c()
@@ -18,13 +17,27 @@ for (i in 1:length(x)){
 
 par(mfrow=c(1, 3), cex=1.2, mai = c(1, 1, 0.1, 0))
 plot(x, BR, type='l', lwd=2, col='blue', ylab=c("Carrying capacity"), xlab="", ylim=c(0,160000))
-title("A. BriÃ¨re", adj = 0.05, line = -0.9)
+title("a. Brière", adj = 0.05, line = -0.9)
 par(cex=1.2, mai = c(1, 0.4, 0.1, 0.3))
 plot(x, QD, type='l', lwd=2, col='blue', ylab="", xlab="", ylim=c(0,160000), yaxt='n')
 Axis(side=2, labels=FALSE)
-title("B. Quadratic", adj = 0.05, line = -0.9)
+title("b. Quadratic", adj = 0.05, line = -0.9)
 par(cex=1.2, mai = c(1, 0.1, 0.1, 0.5))
 plot(x, IN, type='l', lwd=2, col='blue', ylab="", xlab="", ylim=c(0,160000), yaxt='n')
 Axis(side=2, labels=FALSE)
-title("C. Inverse", adj = 0.05, line = -0.9)
+title("c. Inverse", adj = 0.05, line = -0.9)
 mtext('14-day cumulative rainfall (mm)', side=3, line=-25, outer=TRUE, cex=1.2)
+
+# plot humidity funciton -------------------------------------------------------
+x<-c()
+h<-seq(0.2,3,0.2)
+
+for(i in 1:length(h)){
+  x<-c(x,mu_th(29,h[i],1/12))
+}
+
+par(mar = c(5.1, 5.1, 4.1, 1))
+plot(h,x, type='l', col='orange', lwd=2, cex=1.2, xlab="", ylab="", yaxt='n')
+axis(side=2, las=2)
+title(ylab='Mortality rate', line=4)
+title(xlab='Saturation vapor pressure deficit (kilopascals)', line=2.5)
