@@ -1,0 +1,52 @@
+# calculate missing weather data for SI ----------------------------------
+rm(list=ls()) #remove previous variable assignments
+
+# load
+wide_data_ecuador <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Ecuador.csv", head=T, stringsAsFactors = F)
+wide_data_kenya <- read.csv("Concatenated_Data/climate_data/pregapfilled_data_Kenya.csv", head=T, stringsAsFactors = F)
+load("Concatenated_Data/climate_data/merged_climate_data.RData")
+load("Concatenated_Data/case_data/merged_case_data.RData")
+
+kenya <- subset(wide_data_kenya, Date >= min(climateData$Date[climateData$country=="Kenya"]))
+sum(is.na(kenya$chulaimbo_village_temp_mean_hobo))
+sum(is.na(kenya$kisumu_estate_temp_mean_hobo))
+sum(is.na(kenya$msambweni_temp_mean_hobo))
+sum(is.na(kenya$ukunda_temp_mean_hobo))
+sum(is.na(kenya$Two_week_rainfall_chulaimbo))
+sum(is.na(kenya$Two_week_rainfall_obama))
+sum(is.na(kenya$Two_week_rainfall_msambweni))
+sum(is.na(kenya$Two_week_rainfall_ukunda))
+sum(is.na(kenya$chulaimbo_village_rh_mean_hobo))
+sum(is.na(kenya$obama_rh_mean_hobo))
+sum(is.na(kenya$msambweni_rh_mean_hobo))
+sum(is.na(kenya$ukunda_rh_mean_hobo))
+
+library(plyr)
+x<-ddply(cases, .(Site), summarise, dateEarly = min(Date[!is.na(denv_positive)]), dateAll = min(Date[!is.na(denv_positive_clinically_diagnosed)]))
+ecuador <- subset(wide_data_ecuador, date >= "2013-11-02") # as.Date("2014-01-31")-90
+sum(is.na(ecuador$Huaquillas_temp))
+sum(is.na(ecuador$Machala_temp))
+sum(is.na(ecuador$Portovelo_temp))
+sum(is.na(ecuador$Zaruma_temp))
+sum(is.na(ecuador$Huaquillas_Two_week_rainfall))
+sum(is.na(ecuador$Machala_Two_week_rainfall))
+sum(is.na(ecuador$Portovelo_Two_week_rainfall))
+sum(is.na(ecuador$Zaruma_Two_week_rainfall))
+sum(is.na(ecuador$Huaquillas_humidity))
+sum(is.na(ecuador$Machala_humidity))
+sum(is.na(ecuador$Portovelo_humidity))
+sum(is.na(ecuador$Zaruma_humidity))
+
+ecuadorExtended <- subset(wide_data_ecuador, date >= "2001-10-03") # as.Date("2002-01-01")-90
+sum(is.na(ecuadorExtended$Huaquillas_temp))
+sum(is.na(ecuadorExtended$Machala_temp))
+sum(is.na(ecuadorExtended$Portovelo_temp))
+sum(is.na(ecuadorExtended$Zaruma_temp))
+sum(is.na(ecuadorExtended$Huaquillas_Two_week_rainfall))
+sum(is.na(ecuadorExtended$Machala_Two_week_rainfall))
+sum(is.na(ecuadorExtended$Portovelo_Two_week_rainfall))
+sum(is.na(ecuadorExtended$Zaruma_Two_week_rainfall))
+sum(is.na(ecuadorExtended$Huaquillas_humidity))
+sum(is.na(ecuadorExtended$Machala_humidity))
+sum(is.na(ecuadorExtended$Portovelo_humidity))
+sum(is.na(ecuadorExtended$Zaruma_humidity))
