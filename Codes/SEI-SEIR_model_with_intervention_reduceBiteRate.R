@@ -1,7 +1,7 @@
 # Temperature, humidity, and rainfall dependent SEI-SEIR model with intervention for reducing contact rate (biting rate)
 seiseir_model_thr_reduceBiteRate <- function(t, state, parameters) {
   with(as.list(c(state,parameters)), {
-    dM1 <- EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t], timestep)^(-1)*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], rain[t], Rmax, (S+E+I+R), timestep))),0)-(a_reduceBiteRate(temp[t], percReduce)*pMI(temp[t])*(I/(S+E+I+R))+mu_th(temp[t], hum[t], timestep))*M1
+    dM1 <- EFD(temp[t])*pEA(temp[t])*MDR(temp[t])*mu_th(temp[t], hum[t], timestep)^(-1)*(M1+M2+M3)*max((1-((M1+M2+M3)/K_thr(temp[t], rain[t], Rmax, (S+E+I+R)*2, timestep))),0)-(a_reduceBiteRate(temp[t], percReduce)*pMI(temp[t])*(I/(S+E+I+R))+mu_th(temp[t], hum[t], timestep))*M1
     dM2 <- a_reduceBiteRate(temp[t], percReduce)*pMI(temp[t])*(I/(S+E+I+R))*M1-(PDR(temp[t])+mu_th(temp[t], hum[t], timestep))*M2
     dM3 <- PDR(temp[t])*M2-mu_th(temp[t], hum[t], timestep)*M3
     dS <- -a_reduceBiteRate(temp[t], percReduce)*b(temp[t])*(M3/(S+E+I+R))*S + BR*(S/1000)/360 - DR*(S/1000)/360 + ie*(S+E+I+R) - ie*S
